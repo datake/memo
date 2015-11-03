@@ -38,6 +38,8 @@ int main(){
 	cout<<"select -> 4:En_De.csv"<<endl;
 	cout<<"select -> 5:Ja_De.csv"<<endl;
 	cout<<"select -> 6:De_Ja.csv"<<endl;
+	cout<<"select -> 7:Ind_Zsm.csv"<<endl;
+	cout<<"select -> 8:Ind_Mnk.csv"<<endl;
 	cin>>cinnumber;
 	if(cinnumber==1){
 		filename="Ja_En.csv";
@@ -51,7 +53,12 @@ int main(){
 		filename="Ja_De.csv";
 	}else if(cinnumber==6){
 		filename="De_Ja.csv";
+	}else if(cinnumber==7){
+		filename="Ind_Zsm.csv";
+	}else if(cinnumber==8){
+		filename="Ind_Mnk.csv";
 	}
+
 	const char* filename_char=filename.c_str();
 
 	//ifstreamでファイル読み込み

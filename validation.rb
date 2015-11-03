@@ -47,8 +47,10 @@ File.open(error_log_filename, "w") do |errorlog|
         next
       end
     end
-  end
   #precisionとreacllをターミナルに表示
   pp precisions.inject(0.0){|r,i| r+=i }/precisions.size #precision平均
   pp recalls.inject(0.0){|r,i| r+=i }/recalls.size #recall平均
+  io.puts precisions.inject(0.0){|r,i| r+=i }/precisions.size #precision平均
+  io.puts recalls.inject(0.0){|r,i| r+=i }/recalls.size #recall平均
+  end
 end
