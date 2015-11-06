@@ -2,16 +2,17 @@ require 'csv'
 require 'pp'
 require 'logger'
 
-#ここを変更する
-oofile_num=215
-language="Ja_De"
+puts "ファイルで出力される名称を設定(例:Ja_De)"
+language=$stdin.gets.chomp
+puts "ooファイルの個数"
+oofile_num=$stdin.gets.chomp.to_i
+#oofile_num=49
 input_filename="buffer2/graph_"
 answer_filename="answer/"+language+".csv"
 output_filename="validation/"+language+"_validation.csv"
 error_log_filename="validation/"+language+"_error_log.csv"
-log = Logger.new("validation/"+language+"error.log")
+#log = Logger.new("validation/"+language+"error.log")
 start_from_this_line = 0
-#ここまで
 
 File.open(error_log_filename, "w") do |errorlog|
   answer = {}#hash
