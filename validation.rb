@@ -4,10 +4,12 @@ require 'logger'
 
 puts "ファイルで出力される名称を設定(例:Ja_De)"
 language=$stdin.gets.chomp
+puts "検証したいooファイルのあるフォルダを指定(例:1-1/buffer2_JaEn_EnDe)"
+input_folder=$stdin.gets.chomp
 puts "ooファイルの個数"
 oofile_num=$stdin.gets.chomp.to_i
 #oofile_num=49
-input_filename="buffer2/graph_"
+input_filename="#{input_folder}/graph_"
 answer_filename="answer/"+language+".csv"
 output_filename="validation/"+language+"_validation.csv"
 error_log_filename="validation/"+language+"_error_log.csv"
