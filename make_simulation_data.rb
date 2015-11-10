@@ -74,14 +74,14 @@ def print_transgraphs (p_node,a_node,b_node,output_filename)
   end
   pp sets_of_nodes
   pivot_count=0
+  in_degree=Array.new #in_degree=|V_A| 一つのpivotに対してAがいくつ入っているか
+  out_degree=Array.new #out_degree=|V_B|
   # begin
     File.open(output_filename, "w") do |io|
       sets_of_nodes.each{|set_of_nodes|
 
         a_set=set_of_nodes[0]
         b_set=set_of_nodes[1]
-
-
         #if a_set.size==a_node.to_i && b_set.size==b_node.to_i
         sets_of_nodes.delete(set_of_nodes)#自分と自分よりうしろのもの全てを比較
           sets_of_nodes.each{|search_nodes|
@@ -90,8 +90,14 @@ def print_transgraphs (p_node,a_node,b_node,output_filename)
               #指定した全てのノードを含まなければいけない
               #arrayの和集合は|で表現
               if (set_of_nodes[0] | search_nodes[0] | set_of_nodes[1] | search_nodes[1]).size==(a_node.to_i+b_node.to_i)
-                io.puts("\"pivot-#{pivot_count}-1\",\"#{pivot_count}-#{a_set.to_a.join(",#{pivot_count}-")}\",\"#{pivot_count}-#{b_set.to_a.join(",#{pivot_count}-")}\"")
-                io.puts("\"pivot-#{pivot_count}-2\",\"#{pivot_count}-#{search_nodes[0].to_a.join(",#{pivot_count}-")}\",\"#{pivot_count}-#{search_nodes[1].to_a.join(",#{pivot_count}-")}\"")
+                #pivot1について
+                in_degree.push(set_of_nodes[0].size)
+                out_degree.push(set_of_nodes[1].size)
+                io.puts("\"pivot-#{pivot_count}-1\",\"#{pivot_count}-#{a_set.to_a.join(",#{pivot_count}-")}\",\"#{pivot_count}-#{b_set.to_a.join(",#{pivot_count}-")}\",\"#{set_of_nodes[0].size}\",\"#{set_of_nodes[1].size}\"")
+                #pivot2について
+                in_degree.push(search_nodes[0].size)
+                out_degree.push(search_nodes[1].size)
+                io.puts("\"pivot-#{pivot_count}-2\",\"#{pivot_count}-#{search_nodes[0].to_a.join(",#{pivot_count}-")}\",\"#{pivot_count}-#{search_nodes[1].to_a.join(",#{pivot_count}-")}\",\"#{search_nodes[0].size}\",\"#{search_nodes[1].size}\"")
                 pivot_count=pivot_count+1
               end
             end
@@ -99,6 +105,11 @@ def print_transgraphs (p_node,a_node,b_node,output_filename)
         #end
         }
       }
+      p "平均indegree"
+      pp in_degree.inject(0.0){|r,i| r+=i }/in_degree.size
+      p "平均outdegree"
+      pp out_degree.inject(0.0){|r,i| r+=i }/out_degree.size
+
     end
   # rescue => error
   #   log.error(error.message)
