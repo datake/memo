@@ -5,8 +5,8 @@ def main
   input=$stdin.gets.chomp
   input_filename=input+".xml"
   output_filename=input+".csv"
-  output_filename_ap=input+"2.csv"
-  output_filename_bp=input+"3.csv"
+  filename_ap=input+"_2.csv"
+  filename_bp=input+"_3.csv"
 
   doc = REXML::Document.new(open(input_filename))
   File.open(output_filename, "w") do |io|
@@ -15,11 +15,16 @@ def main
         doc.elements.each('DocumentElement/zuk_fixed') { |element|
           ind = element.elements['Zh'].text
           mnk  = element.elements['Ug'].text
-          p ms = element.elements['Kz'].text
+          ms = element.elements['Kz'].text
 
-          #msのみ最初のわけわからん"数値-"を取り除く必要がある
+          ind=split_part_of_speech(ind)
+          mnk=split_part_of_speech(mnk)
+          ms=split_part_of_speech(ms)#msのみ最初の数値-"を除去
+          ms=split_part_of_speech(ms)
+=begin
           ms_arr=ms.split(",")
           ms_processed=[]
+          #msのみ最初の数値-"を取り除く
           ms_arr.each{|ms|
             ms_arr=ms.split("-")
             ms_arr.shift
@@ -27,13 +32,27 @@ def main
           }
 
           ms = ms_processed.join(",")#array to string
+=end
           io.puts("\"#{ind}\",\"#{mnk}\",\"#{ms}\"")
-          io_ap.puts("\"#{mnk}\",\"#{ind}\"")
-          io_bp.puts("\"#{ms}\",\"#{ind}\"")
+          io_ap.puts("\"#{ind}\",\"#{mnk}\"")
+          io_bp.puts("\"#{ind}\",\"#{ms}\"")
         }
       end
     end
   end
+end
+
+def split_part_of_speech (text)
+  lang_arr=text.split(",")
+  lang_processed=[]
+  #hoge-"を取り除く
+  lang_arr.each{|lang|
+    lang_arr=lang.split("-")
+    lang_arr.shift
+    lang_processed.push(lang_arr.join("-"))
+  }
+  lang = lang_processed.join(",")#array to string
+  return lang
 end
 
 main
