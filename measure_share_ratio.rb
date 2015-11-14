@@ -75,14 +75,16 @@ end
 #pivotの共有率を返す
 def measure_share_ratio
   puts "share_ratio以下のP,A,Bの3言語のcsvファイル(ex.JaToEn_EnToDe,Ind_Mnk_Zsm_new)"
-  #input_filename="share_ratio/#{$stdin.gets.chomp}.csv"
-  input_filename="share_ratio/JaToEn_EnToDe.csv"
-  #  input_filename="share_ratio/Ind_Mnk_Zsm_new.csv"
+  input_filename="share_ratio/#{$stdin.gets.chomp}.csv"
+  # input_filename="share_ratio/JaToEn_EnToDe.csv"
+  # input_filename="share_ratio/Ind_Mnk_Zsm_new.csv"
+  # input_filename="share_ratio/Z_U_K.csv"
   puts "answer以下のA-B答えののcsvファイル(ex.Ja_De,Mnk_Zsm)"
-  #answer_filename="answer/#{$stdin.gets.chomp}.csv"
-  answer_filename="answer/Ja_De.csv"
+  answer_filename="answer/#{$stdin.gets.chomp}.csv"
+  # answer_filename="answer/Ja_De.csv"
   # answer_filename="answer/Mnk_Zsm.csv"
-  #TODO:もうひとつ答えもいるはず(日->独と独->日は別)
+  # answer_filename="answer/U_K.csv"
+  #TODO:もうひとつ答えもいる?日->独と独->日は別)
 
   transgraph = Transgraph.new(input_filename) #{"pivot"=>["a", "b"]}
   #pp transgraph.lang_a_p

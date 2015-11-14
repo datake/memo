@@ -1,6 +1,59 @@
 require 'rexml/document'
 require 'pp'
+
 def main
+  parse_Indnesia
+  parse_zuk_answer
+end
+def parse_zuk_answer
+  # puts "変換するxmlファイルを拡張子なしで指定(例 joined/Z_U_K)"
+  # input=$stdin.gets.chomp
+  input="joined/Z_U_K"
+  input_filename="#{input}.xml"
+  output_filename="{input}_answer.csv"
+  filename_zu="{input}_answer_ZU.csv"
+  filename_zk="{input}_answer_ZK.csv"
+  filename_uk="{input}_answer_UK.csv"
+
+  doc = REXML::Document.new(open(input_filename))
+  File.open(output_filename, "w") do |io|
+    File.open(filename_zu, "w") do |io_zu|
+      File.open(filename_zk, "w") do |io_zk|
+        File.open(filename_uk, "w") do |io_uk|
+          doc.elements.each('DocumentElement/zuk_fixed') { |element|
+            zh = element.elements['Zh'].text
+            ug  = element.elements['Ug'].text
+            kz = element.elements['Kz'].text
+            # CSV出力
+            # io.puts("\"#{zh}\",\"#{ug}\",\"#{kz}\"")
+            # io_zu.puts("\"#{zh}\",\"#{ug}\"")
+            # io_zk.puts("\"#{zh}\",\"#{kz}\"")
+            # io_uk.puts("\"#{ug}\",\"#{kz}\"")
+
+            #ugやkzにはcommma区切りで単語が入っている
+            #ugとkzの単語で文字列が一致するもののみ出力(答えデータ)
+            ug_arr=split_comma_to_array(ug)
+            kz_arr=split_comma_to_array(kz)
+            if ug_arr.is_a?(Array) && kz_arr.is_a?(Array)
+              ug_arr.each{|ug|
+                kz_arr.each{|kz|
+                  if ug==kz
+                    io.puts("\"#{zh}\",\"#{ug}\",\"#{kz}\"")
+                    io_zu.puts("\"#{zh}\",\"#{ug}\"")
+                    io_zk.puts("\"#{zh}\",\"#{kz}\"")
+                    io_uk.puts("\"#{ug}\",\"#{kz}\"")
+                  end
+                }
+              }
+            end
+          }
+        end
+      end
+    end
+  end
+end
+
+def parse_Indnesia
   puts "変換するxmlファイルを拡張子なしで指定(例 joined/en-ja-de)"
   input=$stdin.gets.chomp
   input_filename=input+".xml"
@@ -21,18 +74,7 @@ def main
           mnk=split_part_of_speech(mnk)
           ms=split_part_of_speech(ms)#msのみ最初の数値-"を除去
           ms=split_part_of_speech(ms)
-=begin
-          ms_arr=ms.split(",")
-          ms_processed=[]
-          #msのみ最初の数値-"を取り除く
-          ms_arr.each{|ms|
-            ms_arr=ms.split("-")
-            ms_arr.shift
-            ms_processed.push(ms_arr.join("-"))
-          }
 
-          ms = ms_processed.join(",")#array to string
-=end
           io.puts("\"#{ind}\",\"#{mnk}\",\"#{ms}\"")
           io_ap.puts("\"#{ind}\",\"#{mnk}\"")
           io_bp.puts("\"#{ind}\",\"#{ms}\"")
@@ -54,5 +96,17 @@ def split_part_of_speech (text)
   lang = lang_processed.join(",")#array to string
   return lang
 end
+def split_comma_to_array (text)
+  #text=text.gsub(/\s/, ',')
+  lang_arr=text.split
+  if lang_arr.is_a?(Array)
+    return lang_arr
+  elsif lang_arr.is_a?(String)
+    return [lang_arr]
+  else
+    return ""
+  end
+end
+
 
 main
