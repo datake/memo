@@ -40,6 +40,8 @@ int main(){
 	cout<<"select -> 6:De_Ja.csv"<<endl;
 	cout<<"select -> 7:Ind_Zsm.csv"<<endl;
 	cout<<"select -> 8:Ind_Mnk.csv"<<endl;
+	cout<<"select -> 9:Z_K.csv"<<endl;
+	cout<<"select -> 10:Z_U.csv"<<endl;
 	cin>>cinnumber;
 	if(cinnumber==1){
 		filename="Ja_En.csv";
@@ -57,6 +59,10 @@ int main(){
 		filename="Ind_Zsm.csv";
 	}else if(cinnumber==8){
 		filename="Ind_Mnk.csv";
+	}else if(cinnumber==9){
+		filename="Z_K.csv";
+	}else if(cinnumber==10){
+		filename="Z_U.csv";
 	}
 
 	const char* filename_char=filename.c_str();
