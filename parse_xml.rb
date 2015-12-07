@@ -2,9 +2,12 @@ require 'rexml/document'
 require 'pp'
 
 def main
-  parse_Indnesia
-  parse_zuk_answer
+  parse_xml_to_csv
+  # parse_Indnesia
+  # parse_zuk_answer
 end
+
+# => 指定したxmlファイルの答えデータを取得(スペルが同じものを答えとして)
 def parse_zuk_answer
   # puts "変換するxmlファイルを拡張子なしで指定(例 joined/Z_U_K)"
   # input=$stdin.gets.chomp
@@ -53,6 +56,7 @@ def parse_zuk_answer
   end
 end
 
+# => parse_xml_to_csv関数との違いはArbiからもらったIndonesiaは最初に品詞がついていたので品詞を取り除く処理(split_part_of_speech)を行っている
 def parse_Indnesia
   puts "変換するxmlファイルを拡張子なしで指定(例 joined/en-ja-de)"
   input=$stdin.gets.chomp
@@ -63,8 +67,8 @@ def parse_Indnesia
 
   doc = REXML::Document.new(open(input_filename))
   File.open(output_filename, "w") do |io|
-    File.open(filename_ap, "w") do |io_ap|
-      File.open(filename_bp, "w") do |io_bp|
+    File.open(filename_ap, "w") do |io_pa|
+      File.open(filename_bp, "w") do |io_pb|
         doc.elements.each('DocumentElement/zuk_fixed') { |element|
           ind = element.elements['Zh'].text
           mnk  = element.elements['Ug'].text
@@ -76,8 +80,33 @@ def parse_Indnesia
           ms=split_part_of_speech(ms)
 
           io.puts("\"#{ind}\",\"#{mnk}\",\"#{ms}\"")
-          io_ap.puts("\"#{ind}\",\"#{mnk}\"")
-          io_bp.puts("\"#{ind}\",\"#{ms}\"")
+          io_pa.puts("\"#{ind}\",\"#{mnk}\"")
+          io_pb.puts("\"#{ind}\",\"#{ms}\"")
+        }
+      end
+    end
+  end
+end
+
+def parse_xml_to_csv
+  puts "変換するxmlファイルを拡張子なしで指定(例 joined/en-ja-de)"
+  input=$stdin.gets.chomp
+  input_filename=input+".xml"
+  output_filename=input+".csv"
+  filename_ap=input+"_pa.csv"
+  filename_bp=input+"_pb.csv"
+
+  doc = REXML::Document.new(open(input_filename))
+  File.open(output_filename, "w") do |io|
+    File.open(filename_ap, "w") do |io_pa|
+      File.open(filename_bp, "w") do |io_pb|
+        doc.elements.each('DocumentElement/zuk_fixed') { |element|
+          ind = element.elements['Zh'].text
+          mnk  = element.elements['Ug'].text
+          ms = element.elements['Kz'].text
+          io.puts("\"#{ind}\",\"#{mnk}\",\"#{ms}\"")
+          io_pa.puts("\"#{ind}\",\"#{mnk}\"")
+          io_pb.puts("\"#{ind}\",\"#{ms}\"")
         }
       end
     end
