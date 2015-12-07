@@ -14,3 +14,11 @@ else/
 common_headword/
 test1116/
 ZUKdata_November/
+trans_head/
+*.png
+*.pdf
+*.dot
+*.jpg
+metistest/
+connected_components/
+ZUKdata_1122.csv/
