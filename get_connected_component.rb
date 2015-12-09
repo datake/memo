@@ -7,11 +7,15 @@ require 'logger'
 require 'set'
 require 'rgl/dot'
 
+# LANG_A="Uy_"
+# LANG_B="Kz_"
+# LANG_P="Zh_"
 LANG_A="Mnk_"
 LANG_B="Zsm_"
 LANG_P="Ind_"
 def main
   get_connected_component
+  # get_pass_pivot
 end
 
 class Transgraph
@@ -90,32 +94,26 @@ def split_comma_to_array (text)
 end
 
 # => 入力:"pivot","a1,a2,a3..","b1,b2,b3"となっている入力ファイル
-# => 出力:出力ファイルに「トランスグラフのpivotが2以上、ノードが7以上」という条件を満たしたトランスグラフごとの
+# => 出力:出力ファイルに「トランスグラフのpivotが2以上、ノードが6以上」という条件を満たしたトランスグラフごとの
 # => png,dot,csvを connected_components/each_trans/ 以下にファイル出力
+# => 日独、ウイグルカザフなどのグラフ数の多いデータはeach_connected_componentでstack level too deepのエラー出るので
+# => 実質インドネシアのデータでしか使えない。
+# => 今後Pythonのnetworkxのconnected_component_subgraphsを使う
 
 def get_connected_component
   # which_lang="JaToEn_EnToDe"
-  which_lang="Ind_Mnk_Zsm_new"
+  # which_lang="Ind_Mnk_Zsm_new"
+  which_lang="Zh_Uy_Kz"
   input_filename="share_ratio/#{which_lang}.csv"
-  # answer_filename="answer_Mnk_Zsm.csv"
-  output_filename="connected_components/#{which_lang}.csv"
-  output_each_trans_filename="connected_components/each_trans/#{which_lang}"
-
+  output_filename="connected_components1208/#{which_lang}.csv"
+  output_each_trans_filename="connected_components1208/test/#{which_lang}"
 
   transgraph = Transgraph.new(input_filename)
-  # answer = Answer.new(answer_filename)
 
   # 空の有向グラフを作る
   g  = RGL::DirectedAdjacencyGraph.new
 
-  # 日英独、無限再帰おこってる？
   transgraph_count=0
-  # ~5000 ok
-  # ~6000 fail
-  # 5000~6000 fail
-  # 6000~ fail
-  # 7000~ fail
-  # 8000~ok
 
   transgraph.pivot.each{|piv|
     tmp_p=piv[0]
@@ -193,9 +191,9 @@ def get_connected_component
               output_transgraph[i].add_edge(tmp_pivot,tmp_ja)
               io.puts "\"#{LANG_A}#{tmp_ja}\"->\"#{LANG_P}#{tmp_pivot}\";"
               if index==transgraph.lang_p_a[tmp_pivot].size-1
-                io2.print "#{LANG_A}#{tmp_ja}\",\""
+                io2.print "#{tmp_ja}\",\""
               else
-                io2.print "#{LANG_A}#{tmp_ja},"
+                io2.print "#{tmp_ja},"
               end
             }
 
@@ -206,9 +204,9 @@ def get_connected_component
               #
               io.puts "\"#{LANG_P}#{tmp_pivot}\"->\"#{LANG_B}#{tmp_de}\";"
               if index==transgraph.lang_p_b[tmp_pivot].size-1
-                io2.puts "#{LANG_B}#{tmp_de}\""
+                io2.puts "#{tmp_de}\""
               else
-                io2.print "#{LANG_B}#{tmp_de},"
+                io2.print "ge#{tmp_de},"
               end
               # sleep(5)
             }
@@ -221,6 +219,102 @@ def get_connected_component
     system( "dot -Tjpg '#{output_each_trans_filename}_#{i_filecount}.dot' -o #{output_each_trans_filename}_#{i_filecount}.jpg" )
     i_filecount=i_filecount+1
   }
+end
+
+# => rglのconnected_componentが階層が深すぎるエラーがでたため、その対処をしようとしてWIP
+# => Pythonのnetworkxのconnected_componentを取得する関数ではうまくいけたので今後そっちを使う
+def get_pass_pivot #WIP
+  which_lang="JaToEn_EnToDe"
+  # which_lang="Ind_Mnk_Zsm_new"
+  # which_lang="Zh_Uy_Kz"
+  input_filename="share_ratio/#{which_lang}.csv"
+  # answer_filename="answer_Mnk_Zsm.csv"
+  output_filename="connected_components/#{which_lang}_pass_pivot.csv"
+  output_each_trans_filename="connected_components/each_trans/#{which_lang}"
+  divide_k=20 #ZUKは10分割してもと計算深すぎてできない
+
+  transgraph = Transgraph.new(input_filename)
+  passed_pivot=Set.new
+  transgraph_count=0
+
+  divided_transgraph=transgraph.pivot.each_slice(1000).to_a #1000個ずつの配列に変換
+  combi_transgraph_pivot=[]
+  tmp=0
+  pp divided_transgraph.size
+  divided_transgraph.combination(2){|a, b|
+    # 空の有向グラフを作る
+    g  = RGL::DirectedAdjacencyGraph.new
+    begin
+      # pp a
+      tmp+=1
+      pp tmp
+      combi_transgraph_pivot<<a
+      combi_transgraph_pivot<<b
+      combi_transgraph_pivot<<c
+      # ここから繰り返し
+      combi_transgraph_pivot.each{|combi_tr_pi|
+        combi_tr_pi.each{|piv|
+          # pp piv
+          tmp_p=piv[0]
+          g.add_vertex(tmp_p)
+
+          piv[1][0].each{|tmp_a|
+            g.add_vertex("Ja-#{tmp_a}")
+            g.add_edge("En-#{tmp_p}","Ja-#{tmp_a}")
+          }
+          piv[1][1].each{|tmp_b|
+            g.add_vertex("De-#{tmp_b}")
+            g.add_edge("En-#{tmp_p}","De-#{tmp_b}")
+          }
+          transgraph_count+=1
+        }
+      }
+
+      passed_transgraphs = []
+
+      # 「トランスグラフのpivotが2以上、ノードが7以上」という条件を満たしたトランスグラフをpassed_transgraphsという配列にいれる
+      # each_connected_componentが接続するサブグラフを返す
+      g.to_undirected.each_connected_component { |connected_component|
+        count_pivot=0
+        if connected_component.size> 6
+          connected_component.each{|c|
+            if c.start_with?("En-")
+              count_pivot+=1
+            end
+          }
+          # マルダンのアプリケーションでパスするトランスグラフ
+          if count_pivot>1
+            passed_transgraphs <<  connected_component
+          end
+        end
+
+      }
+
+      # pp passed_transgraphs
+      # ファイル出力するものを選別
+      # pivotだけ出力編
+
+      passed_transgraphs.each{|passed_transgraph|
+        passed_transgraph.each{|node|
+          if node.start_with?("En-")
+            passed_pivot << node[3 .. -1] #En-以降の文字列を入れる
+          end
+        }
+      }
+    rescue => error
+      pp error
+      # next
+    end
+  }
+  # ここまで繰り返し
+  passed_pivot.sort!
+
+  File.open(output_filename, "w") do |io|
+    passed_pivot.each{|tmp_pivot|
+      io.puts tmp_pivot
+    }
+  end
+
 end
 
 main
