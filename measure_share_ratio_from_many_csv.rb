@@ -104,16 +104,19 @@ end
 #3言語辞書データと答えの辞書データを入力
 #pivotの共有率を返す
 def measure_share_ratio
-  language="JaToEn_EnToDe"
+  # language="JaToEn_EnToDe"
   # language="Zh_Uy_Kz"
-  input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
+  language="Ind_Mnk_Zsm"
+  # input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
+  input_filename="partition_graph1210/"+language+"/Ind_Mnk_Zsm_new_"
 
   # answer_filename="answer/#{$stdin.gets.chomp}.csv"
-  answer_filename="answer/Ja_De.csv"
-  # answer_filename="answer/Mnk_Zsm.csv"
+  # answer_filename="answer/Ja_De.csv"
+  answer_filename="answer/Mnk_Zsm.csv"
   # answer_filename="answer/answer_UK_1122.csv"
-  max=239
+  # max=239
   # max=1180
+  max=98
   answer = Answer.new(answer_filename)
   answer_hash = {}#hash
   CSV.foreach(answer_filename) do |answer_row|
@@ -132,7 +135,7 @@ def measure_share_ratio
     share_ratio=Array.new #pivotの共有率
     transgraph.node_a.each{|node_a|
       transgraph.node_b.each{|node_b|
-
+        # pp node_b
         pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
         pivot_share=transgraph.lang_a_p[node_a] & transgraph.lang_b_p[node_b]#setの共通部分
         pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
@@ -171,32 +174,16 @@ def measure_share_ratio
 
     }
     if share_ratio_answer.size>0
-      # puts "答えデータのピボット共有率"
-      # share_ratio_of_answer = share_ratio_answer.inject(0.0){|r,i| r+=i }/share_ratio_answer.size
-      # puts share_ratio_of_answer
-
       # pp share_ratio.avg # puts "トランスグラフ内全ての平均"
       pp share_ratio_answer.avg # puts "答えデータのピボット共有率平均"
-      # pp share_ratio_answer
-      # pp share_ratio.standard_deviation
-
-
       if share_ratio.standard_deviation !=0
         share_ratio_answer.each{|sr_answer|
-          # pp sr_answer
-          # if sr_answer<share_ratio.avg
-
-          # pp "答えペアのピボット共有率 , 1.でだしたピボット共有率平均"
-          # pp sr_answer
-          # pp share_ratio.avg
-          # pp (sr_answer-share_ratio.avg)
-          pp (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
-          # end
+          # pp (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
         }
       else
         # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
         share_ratio_answer.each{|sr_answer|
-          puts "0"
+          # puts "0"
         }
       end
     end
