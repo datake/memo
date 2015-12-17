@@ -2,6 +2,7 @@ require 'csv'
 require 'pp'
 require 'logger'
 require 'set'
+require 'unf'
 
 def main
   get_zuk_answer
@@ -139,9 +140,9 @@ end
 # 編集距離0のもの、1のもの、2のもの
 def get_zuk_answer
   input_filename="share_ratio/Z_U_K.csv"
-  answer_filename0="answer/answer_UK_distance0_1215.csv"
-  answer_filename1="answer/answer_UK_distance1_1215.csv"
-  answer_filename2="answer/answer_UK_distance2_1215.csv"
+  answer_filename0="answer/answer_UK_distance0_1217.csv"
+  answer_filename1="answer/answer_UK_distance1_1217.csv"
+  answer_filename2="answer/answer_UK_distance2_1217.csv"
 
   transgraph = Transgraph.new(input_filename)
   answer_UK_0={}
@@ -149,7 +150,9 @@ def get_zuk_answer
   answer_UK_2={}
   transgraph.lang_a_b.each{|key, value_arr|
     value_arr.each{|value|
-      if key==value
+      key=UNF::Normalizer.normalize(key, :nfkc)
+      value=UNF::Normalizer.normalize(value, :nfkc)
+      if levenshtein_distance(key,value)==0
         unless answer_UK_0.include?(key)
           answer_UK_0[key]=value
         end
