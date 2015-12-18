@@ -135,32 +135,34 @@ def split_comma_to_array (text)
   return lang_arr
 end
 
-#ZUKの答えデータを取得する
+# ZUKの答えデータを取得する
 # 入力ファイルがコンマ区切りか注意すること
 # 編集距離0のもの、1のもの、2のもの
+# その単語ペアがマルダンのアプリケーションをpassするかは考慮していない
 def get_zuk_answer
-  input_filename="share_ratio/Z_U_K.csv"
-  answer_filename0="answer/answer_UK_distance0_1217.csv"
-  answer_filename1="answer/answer_UK_distance1_1217.csv"
-  answer_filename2="answer/answer_UK_distance2_1217.csv"
+  # input_filename="share_ratio/Z_U_K.csv"
+  answer_filename0="answer/answer_UK_distance0_bigtrans.csv"
+  answer_filename1="answer/answer_UK_distance1_bigtrans.csv"
+  answer_filename2="answer/answer_UK_distance2_bigtrans.csv"
 
   transgraph = Transgraph.new(input_filename)
   answer_UK_0={}
   answer_UK_1={}
   answer_UK_2={}
   transgraph.lang_a_b.each{|key, value_arr|
+    key=UNF::Normalizer.normalize(key, :nfkc)
     value_arr.each{|value|
-      key=UNF::Normalizer.normalize(key, :nfkc)
       value=UNF::Normalizer.normalize(value, :nfkc)
-      if levenshtein_distance(key,value)==0
+      lev_distance=levenshtein_distance(key,value)
+      if lev_distance==0
         unless answer_UK_0.include?(key)
           answer_UK_0[key]=value
         end
-      elsif levenshtein_distance(key,value)==1 && key[0]==value[0]
+      elsif lev_distance==1 && key[0]==value[0]
         unless answer_UK_1.include?(key)
           answer_UK_1[key]=value
         end
-      elsif levenshtein_distance(key,value)==2 && key[0]==value[0]
+      elsif lev_distance==2 && key[0]==value[0]
         unless answer_UK_2.include?(key)
           answer_UK_2[key]=value
         end
@@ -169,17 +171,17 @@ def get_zuk_answer
   }
   File.open(answer_filename0, "w") do |out|
     answer_UK_0.each{|key, value|
-      out.puts "#{key},#{key}"
+      out.puts "#{key},#{value}"
     }
   end
   File.open(answer_filename1, "w") do |out|
     answer_UK_1.each{|key, value|
-      out.puts "#{key},#{key}"
+      out.puts "#{key},#{value}"
     }
   end
   File.open(answer_filename2, "w") do |out|
     answer_UK_2.each{|key, value|
-      out.puts "#{key},#{key}"
+      out.puts "#{key},#{value}"
     }
   end
 end
