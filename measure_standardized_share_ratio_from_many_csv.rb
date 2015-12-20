@@ -5,10 +5,10 @@ require 'set'
 require 'unf'
 
 def main
-  # measure_share_ratio
+  measure_standardized_share_ratio
   # measure_share_ratio_zuk
   # measure_share_ratio_jaen_jade
-  get_zuk_answer_from_each_trans
+  # get_zuk_answer_from_each_trans
 end
 class Array
   # 要素の平均を算出する
@@ -80,7 +80,7 @@ class Transgraph
             else
               @lang_a_p[a]=Set[row[0]] #{"a1"=>Set[pivot]}
             end
-
+            
             if @lang_b_p.has_key?(b)
               @lang_b_p[b] << row[0] #{"b1"=>Set[pivot1,pivot2,..]}
               # pp @lang_b_p[b]
@@ -130,14 +130,18 @@ end
 
 #3言語辞書データと答えの辞書データを入力
 #pivotの共有率を返す
-def measure_share_ratio
+def measure_standardized_share_ratio
   language="Ind_Mnk_Zsm"
 
   # output=0 -> 標準化後の母集団(任意のペア)のピボット共有率
   # output=1 -> 標準化後の答えのペアのピボット共有率
   # output=2 -> 標準化後の答えペアのピボット共有率のトランスグラフ平均(一つのトランスグラフに複数答えあったらまとめる)
-  output=3
+  # output=3 -> いろいろdebug用
+
+  output=1
+  is_population_connected_only=1 #母集団の取り方
   tmp=0
+  output_folder="standardized_share_ratio1221/"
   if language=="Ind_Mnk_Zsm"
     answer_filename="answer/Mnk_Zsm.csv"
     input_filename="partition_graph1210/"+language+"/Ind_Mnk_Zsm_new_"
@@ -168,143 +172,159 @@ def measure_share_ratio
   # 1.upto(max) do |i|
   1.upto(max) do |i|
     begin
-    # pp "****************#{i}******************"
-    transgraph = Transgraph.new(input_filename+"#{i}.csv")
-    # pp transgraph.node_a
-    pivot_connected=Set.new
-    pivot_share=Set.new
-    raw_output={}
-    each_trans_sr_standardized=Array.new
+      # pp "****************#{i}******************"
+      transgraph = Transgraph.new(input_filename+"#{i}.csv")
+      # pp transgraph.node_a
+      pivot_connected=Set.new
+      pivot_share=Set.new
+      raw_output={}
+      each_trans_sr_standardized=Array.new
 
-    pivot_connected_num=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
-    pivot_share_num=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
-    share_ratio=Array.new #pivotの共有率
-    transgraph.node_a.each{|node_a|
-      transgraph.node_b.each{|node_b|
-        # pp node_b
-        pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
-        pivot_share=transgraph.lang_a_p[node_a] & transgraph.lang_b_p[node_b]#setの共通部分
-        pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
-        pivot_share_num.push(pivot_share.size)
-        share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
-
-        # pp "共有率:#{pivot_share_num[-1]}/#{pivot_connected_num[-1]}"
-        # puts share_ratio.inject(0.0){|r,i| r+=i }/share_ratio.size
-        # pp pivot_share_num[-1].fdiv(pivot_connected_num[-1])
-      }
-    }
-
-    pivot_connected_num_answer=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
-    pivot_share_num_answer=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
-    share_ratio_answer=Array.new #pivotの共有率
-    answer.answer.each{|answer_key, answer_values|
-      answer_values.each{|answer_value|#全てのanswerのA-Bについて走査
-        # pp "#{answer_key} exists"
-        if transgraph.lang_a_b.has_key?(answer_key)#同じ日本語の見出し語があるか
-          if transgraph.lang_a_b[answer_key].include?(answer_value)#同じドイツ語の単語があるか
-            pp "#{answer_key} & #{answer_value} exists"
-            tmp+=1
-            pivot_connected=transgraph.lang_a_p[answer_key] + transgraph.lang_b_p[answer_value]#setの和部分
-            pivot_share=transgraph.lang_a_p[answer_key] & transgraph.lang_b_p[answer_value]#setの共通部分
-            pivot_connected_num_answer.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
-            pivot_share_num_answer.push(pivot_share.size)
-            # pp pivot_share_num[-1].fdiv(pivot_connected_num_answer[-1])
-
-            share_ratio_answer.push(pivot_share_num_answer[-1].fdiv(pivot_connected_num_answer[-1])) #pivotの共有率
+      pivot_connected_num=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
+      pivot_share_num=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
+      share_ratio=Array.new #pivotの共有率
+      # 母集団データのピボット共有率の計測
+      transgraph.node_a.each{|node_a|
+        transgraph.node_b.each{|node_b|
+          # pp node_b
+          pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
+          pivot_share=transgraph.lang_a_p[node_a] & transgraph.lang_b_p[node_b]#setの共通部分
+          if is_population_connected_only==1 && pivot_share.size==0
+            print("とばす")
           else
-            # pp "#{answer_key} found but #{answer_value} doent exists"
+            pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
+            pivot_share_num.push(pivot_share.size)
+            share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
           end
-          # pp "#{answer_key} does not found"
-        end
+
+          # pp "共有率:#{pivot_share_num[-1]}/#{pivot_connected_num[-1]}"
+          # puts share_ratio.inject(0.0){|r,i| r+=i }/share_ratio.size
+          # pp pivot_share_num[-1].fdiv(pivot_connected_num[-1])
+        }
       }
-    }
-    if share_ratio_answer.size>0
-      pp "****************#{i}******************"
-      if output == 0 # 標準化後の母集団(任意のペア)のピボット共有率
-        if share_ratio.standard_deviation !=0
-          share_ratio.each{|sr|
-            pp (sr-share_ratio.avg)/share_ratio.standard_deviation
-            # all_trans_sr_standardized.push((sr-share_ratio.avg)/share_ratio.standard_deviation)
-          }
-        else
-          # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
-          share_ratio.each{|sr|
-            puts "0"
-            # all_trans_sr_standardized.push(0)
-          }
+
+      pivot_connected_num_answer=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
+      pivot_share_num_answer=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
+      share_ratio_answer=Array.new #pivotの共有率
+      answer.answer.each{|answer_key, answer_values|
+        answer_values.each{|answer_value|#全てのanswerのA-Bについて走査
+          # pp "#{answer_key} exists"
+          if transgraph.lang_a_b.has_key?(answer_key)#同じ日本語の見出し語があるか
+            if transgraph.lang_a_b[answer_key].include?(answer_value)#同じドイツ語の単語があるか
+              pp "#{answer_key} & #{answer_value} exists"
+              tmp+=1
+              pivot_connected=transgraph.lang_a_p[answer_key] + transgraph.lang_b_p[answer_value]#setの和部分
+              pivot_share=transgraph.lang_a_p[answer_key] & transgraph.lang_b_p[answer_value]#setの共通部分
+              pivot_connected_num_answer.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
+              pivot_share_num_answer.push(pivot_share.size)
+              # pp pivot_share_num[-1].fdiv(pivot_connected_num_answer[-1])
+
+              share_ratio_answer.push(pivot_share_num_answer[-1].fdiv(pivot_connected_num_answer[-1])) #pivotの共有率
+            else
+              # pp "#{answer_key} found but #{answer_value} doent exists"
+            end
+            # pp "#{answer_key} does not found"
+          end
+        }
+      }
+      if share_ratio_answer.size>0
+        pp "****************#{i}******************"
+        if output == 0 # 標準化後の母集団(任意のペア)のピボット共有率
+          File.open(output_folder+"standardized_population_sr_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
+            if share_ratio.standard_deviation !=0
+              share_ratio.each{|sr|
+                pp (sr-share_ratio.avg)/share_ratio.standard_deviation
+                io.puts (sr-share_ratio.avg)/share_ratio.standard_deviation
+                # all_trans_sr_standardized.push((sr-share_ratio.avg)/share_ratio.standard_deviation)
+              }
+            else
+              # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+              share_ratio.each{|sr|
+                puts "0"
+                io.puts 0
+                # all_trans_sr_standardized.push(0)
+              }
+            end
+          end
+        elsif output == 1 # 標準化後の答えのペアのピボット共有率
+          File.open(output_folder+"standardized_answer_sr_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
+            if share_ratio.standard_deviation !=0
+              share_ratio_answer.each{|sr_answer|
+                pp (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
+                io.puts (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
+                # each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
+              }
+            else
+              # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+              share_ratio_answer.each{|sr_answer|
+                puts "0"
+                io.puts 0
+                # each_trans_sr_standardized.push(0)
+              }
+            end
+          end
+        elsif output == 2 # 標準化後の答えペアのピボット共有率のトランスグラフ平均(一つのトランスグラフに複数答えあったらまとめる)
+          if share_ratio.standard_deviation !=0
+            share_ratio_answer.each{|sr_answer|
+              each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
+            }
+          else
+            # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+            share_ratio_answer.each{|sr_answer|
+              each_trans_sr_standardized.push(0)
+            }
+          end
+          File.open(output_folder+"average_answer_sr_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
+            io.puts each_trans_sr_standardized.avg
+          end
+          pp each_trans_sr_standardized.avg
+          all_trans_sr_standardized.push(each_trans_sr_standardized.avg)
+        elsif output==3
+          if share_ratio.standard_deviation !=0
+            pp "全体-#{i}"
+            share_ratio.each{|sr|
+              pp (sr-share_ratio.avg)/share_ratio.standard_deviation
+              # all_trans_sr_standardized.push((sr-share_ratio.avg)/share_ratio.standard_deviation)
+            }
+          else
+            # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+            share_ratio.each{|sr|
+              puts "0"
+              # all_trans_sr_standardized.push(0)
+            }
+          end
+          if share_ratio.standard_deviation !=0
+            pp "answer-#{i}"
+            share_ratio_answer.each{|sr_answer|
+              pp (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
+              # each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
+            }
+          else
+            # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+            share_ratio_answer.each{|sr_answer|
+              puts "0"
+              # each_trans_sr_standardized.push(0)
+            }
+          end
+          pp "標準化後答え-#{i}"
+          if share_ratio.standard_deviation !=0
+            share_ratio_answer.each{|sr_answer|
+              each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
+            }
+          else
+            # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+            share_ratio_answer.each{|sr_answer|
+              each_trans_sr_standardized.push(0)
+            }
+          end
+          pp each_trans_sr_standardized.avg
+          all_trans_sr_standardized.push(each_trans_sr_standardized.avg)
         end
-      elsif output == 1 # 標準化後の答えのペアのピボット共有率
-        if share_ratio.standard_deviation !=0
-          share_ratio_answer.each{|sr_answer|
-            pp (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
-            # each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
-          }
-        else
-          # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
-          share_ratio_answer.each{|sr_answer|
-            puts "0"
-            # each_trans_sr_standardized.push(0)
-          }
-        end
-      elsif output == 2 # 標準化後の答えペアのピボット共有率のトランスグラフ平均(一つのトランスグラフに複数答えあったらまとめる)
-        if share_ratio.standard_deviation !=0
-          share_ratio_answer.each{|sr_answer|
-            each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
-          }
-        else
-          # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
-          share_ratio_answer.each{|sr_answer|
-            each_trans_sr_standardized.push(0)
-          }
-        end
-        pp each_trans_sr_standardized.avg
-        all_trans_sr_standardized.push(each_trans_sr_standardized.avg)
-      elsif output==3
-        if share_ratio.standard_deviation !=0
-          pp "全体-#{i}"
-          share_ratio.each{|sr|
-            pp (sr-share_ratio.avg)/share_ratio.standard_deviation
-            # all_trans_sr_standardized.push((sr-share_ratio.avg)/share_ratio.standard_deviation)
-          }
-        else
-          # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
-          share_ratio.each{|sr|
-            puts "0"
-            # all_trans_sr_standardized.push(0)
-          }
-        end
-        if share_ratio.standard_deviation !=0
-          pp "answer-#{i}"
-          share_ratio_answer.each{|sr_answer|
-            pp (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
-            # each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
-          }
-        else
-          # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
-          share_ratio_answer.each{|sr_answer|
-            puts "0"
-            # each_trans_sr_standardized.push(0)
-          }
-        end
-        pp "標準化後答え-#{i}"
-        if share_ratio.standard_deviation !=0
-          share_ratio_answer.each{|sr_answer|
-            each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
-          }
-        else
-          # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
-          share_ratio_answer.each{|sr_answer|
-            each_trans_sr_standardized.push(0)
-          }
-        end
-        pp each_trans_sr_standardized.avg
-        all_trans_sr_standardized.push(each_trans_sr_standardized.avg)
       end
+    rescue => ex
+      puts ex.message
+      next
     end
-  rescue => ex
-  puts ex.message
-  next
-  end
   end
   if output == 2
     # pp "debug"
@@ -313,7 +333,7 @@ def measure_share_ratio
     pp all_trans_sr_standardized.avg
 
   end
-    pp tmp
+  pp tmp
 end
 # すでにトランスグラフごとに分けられたファイルを入力とする
 # ZUKの答えデータを取得する
@@ -437,7 +457,7 @@ def measure_share_ratio_zuk
         # 編集距離をここで計算
         if levenshtein_distance(node_a,node_b)<2
 
-        # if node_a==node_b
+          # if node_a==node_b
           pp node_a
           pp node_b
           pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
