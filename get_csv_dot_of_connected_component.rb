@@ -14,7 +14,7 @@ LANG_A="Mnk_"
 LANG_B="Zsm_"
 LANG_P="Ind_"
 def main
-  get_connected_component
+  get_csv_dot_of_connected_component
   # get_pass_pivot
 end
 
@@ -94,13 +94,13 @@ def split_comma_to_array (text)
 end
 
 # => 入力:"pivot","a1,a2,a3..","b1,b2,b3"となっている入力ファイル
-# => 出力:出力ファイルに「トランスグラフのpivotが2以上、ノードが6以上」という条件を満たしたトランスグラフごとの
+# => 出力:出力ファイルに「トランスグラフのpivotが2以上、ノードが7以上」という条件を満たしたトランスグラフごとの
 # => png,dot,csvを connected_components/each_trans/ 以下にファイル出力
 # => 日独、ウイグルカザフなどのグラフ数の多いデータはeach_connected_componentでstack level too deepのエラー出るので
 # => 実質インドネシアのデータでしか使えない。
 # => 今後Pythonのnetworkxのconnected_component_subgraphsを使う
 
-def get_connected_component
+def get_csv_dot_of_connected_component
   # which_lang="JaToEn_EnToDe"
   # which_lang="Ind_Mnk_Zsm_new"
   which_lang="Zh_Uy_Kz"
