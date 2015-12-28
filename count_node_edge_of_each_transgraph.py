@@ -8,22 +8,29 @@ from pprint import pprint
 # import pandas as pd
 # import numpy as np
 
+MINIMUN_NODES=4
+MINIMUN_PIVOT=2
 
 def count_edge():
     G=nx.Graph()
-    language="Zh_Uy_Kz"
-    is_all_transgraph=1 #全てのトランスグラフを対象にするか、マルダンのアプリケーションが対象とするものを対象にするか
+    language="DeToEn_EnToJa"
+    is_all_transgraph=0 #全てのトランスグラフを対象にするか、マルダンのアプリケーションが対象とするものを対象にするか
 
     output_edge_folder="count_node_edge/edge/"
-
     if language=="Ind_Mnk_Zsm":
         input_filename="count_node_edge/Mnk_Ind_Zsm_new_arbi_original.csv"
     elif language=="JaToEn_JaToDe":
-        input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
+         input_filename="joined/JaToEn_JaToDe.csv"
     elif language=="JaToEn_EnToDe":
-        input_filename="share_ratio/JaToEn_EnToDe.csv"
+        input_filename="joined/JaToEn_EnToDe.csv"
+    elif language=="JaToDe_DeToEn":
+        input_filename="joined/JaToDe_DeToEn.csv"
     elif language=="Zh_Uy_Kz":
-        input_filename="share_ratio/Z_U_K.csv"
+        input_filename="joined/Z_U_K.csv"
+    elif language=="EnToJa_EnToDe":
+        input_filename="joined/EnToJa_EnToDe.csv"
+    elif language=="DeToEn_EnToJa":
+        input_filename="joined/DeToEn_EnToJa.csv"
 
     with open(input_filename, 'r') as f:
         dataReader = csv.reader(f)
@@ -92,7 +99,7 @@ def count_edge():
                     print(str(all_edge_num)+","+str(entoja_edge_num)+","+str(entode_edge_num)+"\n")
 
             else: #マルダンのアプリケーションを通過する場合
-                if 6 < len(subgraph):
+                if MINIMUN_NODES <= len(subgraph):
                     print("*********************subgraph number:"+str(pass_subgraph_count)+"("+str(subgraph_count)+")***************************")
                     subgraph_count+=1
                     print("*********************subgraph node数:"+str(len(subgraph))+"***************************")
@@ -103,7 +110,7 @@ def count_edge():
                         if lang[node]=='En':
                             pivot_count+=1
 
-                    if pivot_count > 1:
+                    if pivot_count >= MINIMUN_PIVOT:
                         # en_edge_num=pivot_count
                         # print("英語ノード数")
                         # pprint(pivot_count)
@@ -129,19 +136,25 @@ def count_edge():
 
 def count_node():
     G=nx.Graph()
-    language="Zh_Uy_Kz"
-    is_all_transgraph=1
+    language="DeToEn_EnToJa"
+    is_all_transgraph=0
 
-    output_node_folder="count_node_edge/node"
+    output_node_folder="count_node_edge/node/"
 
     if language=="Ind_Mnk_Zsm":
         input_filename="count_node_edge/Mnk_Ind_Zsm_new_arbi_original.csv"
     elif language=="JaToEn_JaToDe":
-        input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
+         input_filename="joined/JaToEn_JaToDe.csv"
     elif language=="JaToEn_EnToDe":
         input_filename="share_ratio/JaToEn_EnToDe.csv"
+    elif language=="JaToDe_DeToEn":
+        input_filename="joined/JaToDe_DeToEn.csv"
     elif language=="Zh_Uy_Kz":
         input_filename="share_ratio/Z_U_K.csv"
+    elif language=="EnToJa_EnToDe":
+        input_filename="joined/EnToJa_EnToDe.csv"
+    elif language=="DeToEn_EnToJa":
+        input_filename="joined/DeToEn_EnToJa.csv"
 
     f = open(input_filename, 'rb')
     dataReader = csv.reader(f)
@@ -169,11 +182,6 @@ def count_node():
     subgraph_count=0
     pass_subgraph_count=0
 
-    # with open(output_node_count+"node_all.csv", "w") as io_node_all:
-    #     with open(output_node_count+"node_a.csv", "w") as io_node_a:
-    #         with open(output_node_count+"node_p.csv", "w") as io_node_p:
-    #             with open(output_node_count+"node_b.csv", "w") as io_node_b:
-
     with open(output_node_folder+language+"node.csv", "w") as io_node:
         for subgraph in graphs:
             lang=nx.get_node_attributes(subgraph,'lang') # <-この処理遅い
@@ -198,9 +206,11 @@ def count_node():
                         node_all.add(node)
                         if lang[node]=='En':
                             node_p.add(node)
-                        elif lang[node]=='Ja':
+
+                        if lang[node]=='Ja':
                             node_a.add(node)
-                        elif lang[node]=='De':
+
+                        if lang[node]=='De':
                             node_b.add(node)
 
                     pprint(len(node_all))
@@ -209,22 +219,24 @@ def count_node():
                     pprint(len(node_b))
                     io_node.write(str(len(node_all))+","+str(len(node_a))+","+str(len(node_p))+","+str(len(node_b))+"\n")
             else:
-                if 6 < len(subgraph): #!!! ノード数の制限
+                if MINIMUN_NODES <= len(subgraph): #!!! ノード数の制限
                     print("*********************subgraph number:"+str(pass_subgraph_count)+"("+str(subgraph_count)+")***************************")
                     subgraph_count+=1
                     print("*********************subgraph node数:"+str(len(subgraph))+"***************************")
                     for node in subgraph.nodes():
                         if lang[node]=='En':
                             pivot_count+=1
-                    if pivot_count > 1:
+                    if pivot_count >= MINIMUN_PIVOT:
                         pass_subgraph_count+=1
                         for node in subgraph.nodes():
                             node_all.add(node)
                             if lang[node]=='En':
                                 node_p.add(node)
-                            elif lang[node]=='Ja':
+
+                            if lang[node]=='Ja':
                                 node_a.add(node)
-                            elif lang[node]=='De':
+
+                            if lang[node]=='De':
                                 node_b.add(node)
 
                         pprint(len(node_all))
@@ -233,4 +245,5 @@ def count_node():
                         pprint(len(node_b))
                         io_node.write(str(len(node_all))+","+str(len(node_a))+","+str(len(node_p))+","+str(len(node_b))+"\n")
 
+count_node()
 count_edge()
