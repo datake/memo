@@ -86,64 +86,6 @@ end
 
 #3言語辞書データと答えの辞書データを入力
 #pivotの共有率を返す
-def measure_share_ratio_version1
-  puts "share_ratio以下のP,A,Bの3言語のcsvファイル(ex.JaToEn_EnToDe,Ind_Mnk_Zsm_new)"
-  input_filename="share_ratio/#{$stdin.gets.chomp}.csv"
-  # input_filename="share_ratio/JaToEn_EnToDe.csv"
-  # input_filename="share_ratio/Ind_Mnk_Zsm_new.csv"
-  # input_filename="share_ratio/Z_U_K.csv"
-  puts "answer以下のA-B答えののcsvファイル(ex.Ja_De,Mnk_Zsm)"
-  answer_filename="answer/#{$stdin.gets.chomp}.csv"
-  # answer_filename="answer/Ja_De.csv"
-  # answer_filename="answer/Mnk_Zsm.csv"
-  # answer_filename="answer/U_K.csv"
-  #TODO:もうひとつ答えもいる?日->独と独->日は別)
-
-  transgraph = Transgraph.new(input_filename) #{"pivot"=>["a", "b"]}
-  #pp transgraph.lang_a_p
-  answer = Answer.new(answer_filename)
-
-  #答えとなるペアそれぞれについて、以下の3つを出す
-  #answer_key_value_pair=Array.new
-  pivot_connected=Set.new
-  pivot_share=Set.new
-  pivot_connected_num=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
-  pivot_share_num=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
-  share_ratio=Array.new #pivotの共有率
-  answer.answer.each{|answer_key, answer_values|
-    # answer_valueは配列
-    answer_values.each{|answer_value|#全てのanswerのA-Bについて走査
-      if transgraph.lang_a_b.has_key?(answer_key)#同じ日本語の見出し語があるか
-        if transgraph.lang_a_b[answer_key].include?(answer_value)#同じドイツ語の単語があるか
-          # pp "#{answer_key} & #{answer_value} exists"
-          #answer_keyとanswer_valueに接続する全てのpivotの集合をとる
-          # pp transgraph.lang_a_p[answer_key]
-          # pp transgraph.lang_b_p[answer_value]
-          pivot_connected=transgraph.lang_a_p[answer_key] + transgraph.lang_b_p[answer_value]#setの和部分
-          pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
-          pivot_share=transgraph.lang_a_p[answer_key] & transgraph.lang_b_p[answer_value]#setの共通部分
-          pivot_share_num.push(pivot_share.size)
-          # pp pivot_share_num[-1].fdiv(pivot_connected_num[-1])
-          p "#{pivot_share_num[-1]}/#{pivot_connected_num[-1]}"
-          share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
-        else
-          # pp "#{answer_key} & #{answer_value} doent exists"
-        end
-
-
-      end
-    }
-
-  }
-  puts share_ratio.inject(0.0){|r,i| r+=i }/share_ratio.size
-  # pp pivot_connected_num
-  # pp pivot_share
-  # pp pivot_connected_num
-  # pp pivot_share_num
-end
-
-#3言語辞書データと答えの辞書データを入力
-#pivotの共有率を返す
 def measure_share_ratio
   puts "share_ratio以下のP,A,Bの3言語のcsvファイル(ex.JaToEn_EnToDe,Ind_Mnk_Zsm_new)"
   # inmput_filename="share_ratio/#{$stdin.gets.chomp}.csv"
@@ -155,7 +97,7 @@ def measure_share_ratio
   # answer_filename="answer/Ja_De.csv"
   # answer_filename="answer/Mnk_Zsm.csv"
   # answer_filename="answer/U_K.csv"
-  answer_filename="answer_UK.csv"
+  answer_filename="ZUKdata_1122/answer_UK.csv"
 
   # output_filename="output.csv"
   #TODO:もうひとつ答えもいる?日->独と独->日は別)
