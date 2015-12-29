@@ -14,7 +14,8 @@ LANG_A="Mnk_"
 LANG_B="Zsm_"
 LANG_P="Ind_"
 def main
-  get_csv_dot_of_connected_component
+  make_dot_img_from_each_trans
+  # get_csv_dot_of_connected_component
   # get_pass_pivot
 end
 
@@ -28,39 +29,36 @@ class Transgraph
     @lang_p_a = {}
     @lang_p_b = {}
     CSV.foreach(input_filename) do |row|
-      # #ZUKのデータはカンマ区切りではなく空白区切りで入ってる
-      # row[1] = row[1].gsub(/؛/, ',')
-      # #
-      # row[2] = row[2].gsub(/؛/, '\,')
-      # pp row[1]
-      array_of_a = split_comma_to_array(row[1])
-      array_of_b  = split_comma_to_array(row[2])
-      @pivot[row[0]]=[array_of_a,array_of_b] #{"pivot"=>[[a1,a2,a3,..], [b1,b2,b3,..]]}
+      if row.size  == 3
+        array_of_a = split_comma_to_array(row[1])
+        array_of_b  = split_comma_to_array(row[2])
+        @pivot[row[0]]=[array_of_a,array_of_b] #{"pivot"=>[[a1,a2,a3,..], [b1,b2,b3,..]]}
 
-      @lang_p_a[row[0]] = array_of_a
-      @lang_p_b[row[0]] = array_of_b
-      array_of_a.each{|a|
-        array_of_b.each{|b|
-          @lang_a_b[a]=array_of_b #{"a1"=>[b1,b2,b3,..]}とか{"a2"=>[b1,b2,b3,..]}
-          @lang_b_a[b]=array_of_a #{"b1"=>"a1,a2,a3,..]"}
-          #aやbからみたとき、複数のpivotが対応することがある
-          if @lang_a_p.has_key?(a)
-            @lang_a_p[a] << row[0] #{"a1"=>Set[pivot1,pivot2,..]}
-            # pp @lang_a_p[a]
-          else
-            @lang_a_p[a]=Set[row[0]] #{"a1"=>Set[pivot]}
-          end
+        @lang_p_a[row[0]] = array_of_a
+        @lang_p_b[row[0]] = array_of_b
+        array_of_a.each{|a|
+          array_of_b.each{|b|
+            @lang_a_b[a]=array_of_b #{"a1"=>[b1,b2,b3,..]}とか{"a2"=>[b1,b2,b3,..]}
+            @lang_b_a[b]=array_of_a #{"b1"=>"a1,a2,a3,..]"}
+            #aやbからみたとき、複数のpivotが対応することがある
+            if @lang_a_p.has_key?(a)
+              @lang_a_p[a] << row[0] #{"a1"=>Set[pivot1,pivot2,..]}
+              # pp @lang_a_p[a]
+            else
+              @lang_a_p[a]=Set[row[0]] #{"a1"=>Set[pivot]}
+            end
 
-          if @lang_b_p.has_key?(b)
-            @lang_b_p[b] << row[0] #{"b1"=>Set[pivot1,pivot2,..]}
-            # pp @lang_b_p[b]
-          else
-            @lang_b_p[b]=Set[row[0]] #{"b1"=>"Set[pivot]}
-            # pp @lang_b_p[b][0]
+            if @lang_b_p.has_key?(b)
+              @lang_b_p[b] << row[0] #{"b1"=>Set[pivot1,pivot2,..]}
+              # pp @lang_b_p[b]
+            else
+              @lang_b_p[b]=Set[row[0]] #{"b1"=>"Set[pivot]}
+              # pp @lang_b_p[b][0]
 
-          end
+            end
+          }
         }
-      }
+      end
     end
   end
   attr_accessor :pivot
@@ -96,51 +94,60 @@ end
 
 #すでに繋がっているトランスグラフごとに分離されているファイルから
 #dotや画像を出力
+#TODO:答えの情報も色などで図に表示できたら
 def make_dot_img_from_each_trans
-  language="Zh_Uy_Kz"
+  language="JaToEn_JaToDe"
   # language="Ind_Mnk_Zsm_new"
   # language="Zh_Uy_Kz"
-  # input_filename="share_ratio/#{language}.csv"
-  # input_filename="connected_components/each_trans_#{language}/#{language}"
-  # answer_filename="answer/answer_UK_1122.csv"
-  output_filename="visualize_1216/csc/#{language}.csv"
-  output_each_trans_filename="visualize_1216/#{language}/"
+  output_filename="visualize_1230/csv/#{language}.csv"
+  output_each_trans_filename="visualize_1230/#{language}/"
 
   if language=="Ind_Mnk_Zsm"
     answer_filename="answer/Mnk_Zsm.csv"
-    input_filename="partition_graph1210/"+language+"/Ind_Mnk_Zsm_new_"
-    max=98
+    input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+    # Ind_Mnk_Zsmだけ大規模トランスグラフがないから0番目も表示する
+    max=155
     lang_A="Mnk_"
     lang_B="Zsm_"
     lang_P="Ind_"
   elsif language=="JaToEn_JaToDe"
-    input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
-    answer_filename="answer/EnToDe.csv"
-    max=215
+    input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+    answer_filename="answer/En_De.csv"
+    lang_A="En_"
+    lang_B="De_"
+    lang_P="Ja_"
+    max=389
   elsif language=="JaToEn_EnToDe"
-    max=239
-    input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
+    max=453
+    input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
     answer_filename="answer/Ja_De.csv"
     lang_A="Ja_"
     lang_B="De_"
     lang_P="En_"
   elsif language=="Zh_Uy_Kz"
-    max=1180
-    # input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
-    input_filename="connected_components/each_trans_#{language}/#{language}_subgraph_"
-    answer_filename="answer/answer_UK_1122.csv"
-    # answer_filename="answer/answer_UK_distance2_1215.csv"
+    max=1457
+    input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
+    answer_filename="answer/Ja_De.csv"
+    lang_A="Uy_"
+    lang_B="Kk_"
+    lang_P="Zh_"
+  elsif language=="JaToEn_JaToDe"
+    max=389
+    input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
+    answer_filename="answer/Ja_De.csv"
+    lang_A="En_"
+    lang_B="Ja_"
+    lang_P="De_"
+  elsif language=="JaToDe_DeToEn"
+    max=364
+    input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
+    answer_filename="answer/Ja_De.csv"
+    lang_A="Ja_"
+    lang_B="En_"
+    lang_P="De_"
   end
-  # input_filename="connected_components/each_trans_#{language}/#{language}"
-
-
-
-  # transgraph = Transgraph.new(input_filename)
   answer = Answer.new(answer_filename)
-
-  #transgraph情報を画像表示
-  i_filecount=0
-
+  #0番目は巨大なので指定するとstack level too deepになる
   for i_filecount in 1 .. max
 
     # transgraph = Transgraph.new("#{input_filename}_subgraph_#{i_filecount}.csv")
@@ -231,7 +238,6 @@ def make_dot_img_from_each_trans
                 else
                   io2.print "#{lang_B}#{tmp_de},"
                 end
-                # sleep(5)
               }
               i=i+1
             end
