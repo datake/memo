@@ -136,7 +136,7 @@ def count_edge():
 
 def count_node():
     G=nx.Graph()
-    language="JaToEn_JaToDe"
+    language="DeToEn_EnToJa"
     is_all_transgraph=0
 
     output_node_folder="count_node_edge/node/"
