@@ -76,13 +76,24 @@ end
 
 class Answer
   def initialize(answer_filename)
-    @answer = {} #{"k1"=>["v1", "v2"]}
+    @answer = {}
+    @answer_head_trans = Hash.new {|h,k| h[k]=[]}
     CSV.foreach(answer_filename) do |row|
-      #{"answer"=>["a", "b"]}
       @answer[row[0]]=row[1..-1]
+      if row[0 .. -1].size>1
+        row[1..-1].each{|trans|
+          if answer_head_trans.has_key?(trans)
+            answer_head_trans[trans] << row[0]
+            #まだ登録されていないkeyならvalueに追加
+          else
+            answer_head_trans[trans] << row[0]
+          end
+        }
+      end
     end
   end
   attr_accessor :answer
+  attr_accessor :answer_head_trans
 end
 
 def split_comma_to_array (text)
@@ -94,161 +105,206 @@ end
 
 #すでに繋がっているトランスグラフごとに分離されているファイルから
 #dotや画像を出力
-#TODO:答えの情報も色などで図に表示できたら
+#TODO:Ind_Mnk_Zsmの答え自動チェック
 def make_dot_img_from_each_trans
-  language="JaToEn_JaToDe"
-  # language="Ind_Mnk_Zsm_new"
-  # language="Zh_Uy_Kz"
-  output_filename="visualize_1230/csv/#{language}.csv"
-  output_each_trans_filename="visualize_1230/#{language}/"
+  # languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn","Zh_Uy_Kz"]
+  languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn"]
+  # language="JaToEn_JaToDe"
+  languages.each{|language|
+    # language="JaToEn_JaToDe"
+    # language="Ind_Mnk_Zsm_new"
+    # language="Zh_Uy_Kz"
+    output_filename="visualize_1230/csv/#{language}.csv"
+    output_each_trans_filename="visualize_1230/#{language}/"
 
-  if language=="Ind_Mnk_Zsm"
-    answer_filename="answer/Mnk_Zsm.csv"
-    input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
-    # Ind_Mnk_Zsmだけ大規模トランスグラフがないから0番目も表示する
-    max=155
-    lang_A="Mnk_"
-    lang_B="Zsm_"
-    lang_P="Ind_"
-  elsif language=="JaToEn_JaToDe"
-    input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
-    answer_filename="answer/En_De.csv"
-    lang_A="En_"
-    lang_B="De_"
-    lang_P="Ja_"
-    max=389
-  elsif language=="JaToEn_EnToDe"
-    max=453
-    input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
-    answer_filename="answer/Ja_De.csv"
-    lang_A="Ja_"
-    lang_B="De_"
-    lang_P="En_"
-  elsif language=="Zh_Uy_Kz"
-    max=1457
-    input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
-    answer_filename="answer/Ja_De.csv"
-    lang_A="Uy_"
-    lang_B="Kk_"
-    lang_P="Zh_"
-  elsif language=="JaToEn_JaToDe"
-    max=389
-    input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
-    answer_filename="answer/Ja_De.csv"
-    lang_A="En_"
-    lang_B="Ja_"
-    lang_P="De_"
-  elsif language=="JaToDe_DeToEn"
-    max=364
-    input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
-    answer_filename="answer/Ja_De.csv"
-    lang_A="Ja_"
-    lang_B="En_"
-    lang_P="De_"
-  end
-  answer = Answer.new(answer_filename)
-  #0番目は巨大なので指定するとstack level too deepになる
-  for i_filecount in 1 .. max
+    if language=="Ind_Mnk_Zsm"
+      answer_filename="answer/Mnk_Zsm.csv"
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      # Ind_Mnk_Zsmだけ大規模トランスグラフがないから0番目も表示する
+      max=155
+      lang_A="Mnk_"
+      lang_B="Zsm_"
+      lang_P="Ind_"
+    elsif language=="JaToEn_JaToDe"
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      answer_filename="answer/En_De.csv"
+      answer_filename2="answer/De_En.csv"
 
-    # transgraph = Transgraph.new("#{input_filename}_subgraph_#{i_filecount}.csv")
-    transgraph = Transgraph.new(input_filename+"#{i_filecount}.csv")
+      lang_A="En_"
+      lang_B="De_"
+      lang_P="Ja_"
+      max=389
+    elsif language=="JaToEn_EnToDe"
+      max=453
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      answer_filename="answer/Ja_De.csv"
+      answer_filename2="answer/De_Ja.csv"
 
-    # 空の有向グラフを作る
-    g  = RGL::DirectedAdjacencyGraph.new
+      lang_A="Ja_"
+      lang_B="De_"
+      lang_P="En_"
+    elsif language=="Zh_Uy_Kz"
+      max=1457
+      input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
+      answer_filename="answer/Uy_Kz.csv"
+      lang_A="Uy_"
+      lang_B="Kk_"
+      lang_P="Zh_"
+    elsif language=="JaToDe_DeToEn"
+      max=364
+      input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
+      answer_filename="answer/Ja_En.csv"
+      answer_filename2="answer/En_Ja.csv"
 
-    transgraph_count=0
+      lang_A="Ja_"
+      lang_B="En_"
+      lang_P="De_"
+    end
+    answer = Answer.new(answer_filename)
+    if languages == "JaToEn_JaToDe" || languages == "JaToEn_EnToDe" || languages == "JaToDe_DeToEn"
+        answer2 = Answer.new(answer_filename2)
+    end
+    #0番目は巨大なので指定するとstack level too deepになる
+    for i_filecount in 1 .. max
 
-    transgraph.pivot.each{|piv|
-      tmp_p=piv[0]
-      g.add_vertex(tmp_p)
+      # transgraph = Transgraph.new("#{input_filename}_subgraph_#{i_filecount}.csv")
+      transgraph = Transgraph.new(input_filename+"#{i_filecount}.csv")
 
-      piv[1][0].each{|tmp_a|
-        g.add_vertex("Ja-#{tmp_a}")
-        g.add_edge("En-#{tmp_p}","Ja-#{tmp_a}")
-      }
-      piv[1][1].each{|tmp_b|
-        g.add_vertex("De-#{tmp_b}")
-        g.add_edge("En-#{tmp_p}","De-#{tmp_b}")
-      }
-      transgraph_count+=1
-    }
+      # 空の有向グラフを作る
+      g  = RGL::DirectedAdjacencyGraph.new
 
-    passed_transgraphs = []
+      transgraph_count=0
 
-    # 「トランスグラフのpivotが2以上、ノードが7以上」という条件を満たしたトランスグラフをpassed_transgraphsという配列にいれる
-    # each_connected_componentが接続するサブグラフを返す
-    g.to_undirected.each_connected_component { |connected_component|
-      count_pivot=0
-      if connected_component.size> 6
-        connected_component.each{|c|
-          if c.start_with?("En-")
-            count_pivot+=1
-          end
+      transgraph.pivot.each{|piv|
+        tmp_p=piv[0]
+        g.add_vertex(tmp_p)
+
+        piv[1][0].each{|tmp_a|
+          g.add_vertex("Ja-#{tmp_a}")
+          g.add_edge("En-#{tmp_p}","Ja-#{tmp_a}")
         }
-        # マルダンのアプリケーションでパスするトランスグラフ
-        if count_pivot>1
-          passed_transgraphs <<  connected_component
-        end
-      end
+        piv[1][1].each{|tmp_b|
+          g.add_vertex("De-#{tmp_b}")
+          g.add_edge("En-#{tmp_p}","De-#{tmp_b}")
+        }
+        transgraph_count+=1
+      }
 
-    }
+      passed_transgraphs = []
 
-    # i_filecount=0
-    i=0
-    output_transgraph=[]
-    passed_transgraphs.each{|passed_transgraph|
-      pp passed_transgraph
-      File.open("#{output_each_trans_filename}#{i_filecount}.dot", "w") do |io|
-        File.open("#{output_each_trans_filename}#{i_filecount}.csv", "w") do |io2|
-          io.puts "digraph #{i} {"
-          io.puts "graph [rankdir = LR];"
-          passed_transgraph.each{|node|
-            if node.start_with?("En-")
-              tmp_pivot=node[3 .. -1]
-              output_transgraph[i]  = RGL::DirectedAdjacencyGraph.new
-              pp tmp_pivot
-              io2.print "\"#{tmp_pivot}\",\""
-              # 英->日
-              transgraph.lang_p_a[tmp_pivot].each_with_index{|tmp_ja,index|
-                if tmp_ja.size == 0
-                  next
-                end
-                output_transgraph[i].add_vertex(tmp_ja)
-                output_transgraph[i].add_edge(tmp_pivot,tmp_ja)
-                # io.puts "tmp \[\"#{lang_P}#{tmp_pivot}\[color=yellow\]\";"
-                io.puts "\"#{lang_A}#{tmp_ja}\"->\"#{lang_P}#{tmp_pivot}\";"
-                if index==transgraph.lang_p_a[tmp_pivot].size-1
-                  io2.print "#{lang_A}#{tmp_ja}\",\""
-                else
-                  io2.print "#{lang_A}#{tmp_ja},"
-                end
-              }
-
-              # 英->独
-              transgraph.lang_p_b[tmp_pivot].each_with_index{|tmp_de,index|
-                if tmp_de.size == 0
-                  next
-                end
-                output_transgraph[i].add_vertex(tmp_de)
-                output_transgraph[i].add_edge(tmp_pivot,tmp_de)
-                #
-                io.puts "\"#{lang_P}#{tmp_pivot}\"->\"#{lang_B}#{tmp_de}\";"
-                if index==transgraph.lang_p_b[tmp_pivot].size-1
-                  io2.puts "#{lang_B}#{tmp_de}\""
-                else
-                  io2.print "#{lang_B}#{tmp_de},"
-                end
-              }
-              i=i+1
+      # 「トランスグラフのpivotが2以上、ノードが7以上」という条件を満たしたトランスグラフをpassed_transgraphsという配列にいれる
+      # each_connected_componentが接続するサブグラフを返す
+      g.to_undirected.each_connected_component { |connected_component|
+        count_pivot=0
+        if connected_component.size>= 4
+          connected_component.each{|c|
+            if c.start_with?("En-")
+              count_pivot+=1
             end
           }
-          io.puts "}"
+          # マルダンのアプリケーションでパスするトランスグラフ
+          if count_pivot>1
+            passed_transgraphs <<  connected_component
+          end
         end
-      end
-      system( "dot -Tjpg '#{output_each_trans_filename}#{i_filecount}.dot' -o #{output_each_trans_filename}#{i_filecount}.jpg" )
-      i_filecount=i_filecount+1
-    }
-  end
+
+      }
+
+      # i_filecount=0
+      i=0
+      output_transgraph=[]
+      passed_transgraphs.each{|passed_transgraph|
+        # pp passed_transgraph
+        File.open("#{output_each_trans_filename}#{i_filecount}.dot", "w") do |io|
+          File.open("#{output_each_trans_filename}#{i_filecount}.csv", "w") do |io2|
+            io.puts "digraph #{i} {"
+            io.puts "graph [rankdir = LR];"
+            passed_transgraph.each{|node|
+
+              #答えペアに色付け
+              if node.start_with?("Ja-")
+                node_a=node[3 .. -1] #Aノード
+                if answer.answer[node_a] && transgraph.lang_a_b[node_a]
+                  answerandb =answer.answer[node_a] & transgraph.lang_a_b[node_a]
+                  if ! answerandb.empty?
+                    color = "%06x" % (rand * 0xffffff)
+                    io.puts "\"#{lang_A}#{node_a}\" [penwidth=5 color = \"\##{color}\"];"
+                    answerandb.each{|node_b|
+                      io.puts "\"#{lang_B}#{node_b}\" [penwidth=5 color = \"\##{color}\"];"
+                      io.puts "\"#{lang_A}#{node_a}\"->\"#{lang_B}#{node_b}\" [style = dashed color = \"\##{color}\" dir = none];"
+                    }
+
+                  end
+                end
+              end
+
+              #二つ目の辞書でも色付け
+              if languages == "JaToEn_JaToDe" || languages == "JaToEn_EnToDe" || languages == "JaToDe_DeToEn"
+                if node.start_with?("De-")
+                  node_b=node[3 .. -1] #Bノード
+                  if answer2.answer[node_b] && transgraph.lang_b_a[node_b]
+                    answeranda =answer2.answer[node_b] & transgraph.lang_b_a[node_b]
+                    if ! answeranda.empty?
+                      color = "%06x" % (rand * 0xffffff)
+                      io.puts "\"#{lang_B}#{node_b}\" [penwidth=5 color = \"\##{color}\"];"
+                      answerandb.each{|node_a|
+                        io.puts "\"#{lang_A}#{node_a}\" [penwidth=5 color = \"\##{color}\"];"
+                        io.puts "\"#{lang_A}#{node_a}\"->\"#{lang_B}#{node_b}\" [style = dashed color = \"\##{color}\" dir = none];"
+                      }
+
+                    end
+                  end
+                end
+              end
+
+              if node.start_with?("En-")
+                tmp_pivot=node[3 .. -1]
+                output_transgraph[i]  = RGL::DirectedAdjacencyGraph.new
+                io2.print "\"#{tmp_pivot}\",\""
+                # 英->日
+                transgraph.lang_p_a[tmp_pivot].each_with_index{|tmp_ja,index|
+                  if tmp_ja.size == 0
+                    next
+                  end
+                  output_transgraph[i].add_vertex(tmp_ja)
+                  output_transgraph[i].add_edge(tmp_pivot,tmp_ja)
+
+                  #dot言語記述(英->日)
+                  io.puts "\"#{lang_A}#{tmp_ja}\"->\"#{lang_P}#{tmp_pivot}\";"
+                  if index==transgraph.lang_p_a[tmp_pivot].size-1
+                    io2.print "#{lang_A}#{tmp_ja}\",\""
+                  else
+                    io2.print "#{lang_A}#{tmp_ja},"
+                  end
+                }
+
+                # 英->独
+                transgraph.lang_p_b[tmp_pivot].each_with_index{|tmp_de,index|
+                  if tmp_de.size == 0
+                    next
+                  end
+                  output_transgraph[i].add_vertex(tmp_de)
+                  output_transgraph[i].add_edge(tmp_pivot,tmp_de)
+                  #dot言語記述(英->独)
+                  io.puts "\"#{lang_P}#{tmp_pivot}\"->\"#{lang_B}#{tmp_de}\";"
+                  if index==transgraph.lang_p_b[tmp_pivot].size-1
+                    io2.puts "#{lang_B}#{tmp_de}\""
+                  else
+                    io2.print "#{lang_B}#{tmp_de},"
+                  end
+                }
+                i=i+1
+              end
+            }
+            io.puts "}"
+          end
+        end
+        system( "dot -Tjpg '#{output_each_trans_filename}#{i_filecount}.dot' -o #{output_each_trans_filename}#{i_filecount}.jpg" )
+        # i_filecount=i_filecount+1
+        pp i_filecount
+      }
+    end
+  }
 end
 
 
@@ -294,11 +350,11 @@ def get_csv_dot_of_connected_component
 
   passed_transgraphs = []
 
-  # 「トランスグラフのpivotが2以上、ノードが7以上」という条件を満たしたトランスグラフをpassed_transgraphsという配列にいれる
+  # 「トランスグラフのpivotが2以上、ノードが4以上」という条件を満たしたトランスグラフをpassed_transgraphsという配列にいれる
   # each_connected_componentが接続するサブグラフを返す
   g.to_undirected.each_connected_component { |connected_component|
     count_pivot=0
-    if connected_component.size> 6
+    if connected_component.size>=4
       connected_component.each{|c|
         if c.start_with?("En-")
           count_pivot+=1
@@ -438,7 +494,7 @@ def get_pass_pivot #WIP
       # each_connected_componentが接続するサブグラフを返す
       g.to_undirected.each_connected_component { |connected_component|
         count_pivot=0
-        if connected_component.size> 6
+        if connected_component.size>= 4
           connected_component.each{|c|
             if c.start_with?("En-")
               count_pivot+=1
