@@ -108,7 +108,8 @@ end
 #TODO:Ind_Mnk_Zsmの答え自動チェック
 def make_dot_img_from_each_trans
   # languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn","Zh_Uy_Kz"]
-  languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn"]
+  # languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn"]
+  languages = ["Ind_Mnk_Zsm"]
   # language="JaToEn_JaToDe"
   languages.each{|language|
     # language="JaToEn_JaToDe"
@@ -224,16 +225,38 @@ def make_dot_img_from_each_trans
               #答えペアに色付け
               if node.start_with?("Ja-")
                 node_a=node[3 .. -1] #Aノード
-                if answer.answer[node_a] && transgraph.lang_a_b[node_a]
-                  answerandb =answer.answer[node_a] & transgraph.lang_a_b[node_a]
-                  if ! answerandb.empty?
-                    color = "%06x" % (rand * 0xffffff)
-                    io.puts "\"#{lang_A}#{node_a}\" [penwidth=5 color = \"\##{color}\"];"
-                    answerandb.each{|node_b|
-                      io.puts "\"#{lang_B}#{node_b}\" [penwidth=5 color = \"\##{color}\"];"
-                      io.puts "\"#{lang_A}#{node_a}\"->\"#{lang_B}#{node_b}\" [style = dashed color = \"\##{color}\" dir = none];"
-                    }
 
+                if language=="Ind_Mnk_Zsm"
+                  #Indは品詞-単語という形になっている
+                  answer_a=node_a.split(/\s*(_|-)\s*/)[-1]
+                  if answer.answer[answer_a] && transgraph.lang_a_b[node_a]
+                    node_b_arr = []
+                    node_ans_hash={}
+                    transgraph.lang_a_b[node_a].each{|node_b_from_a|
+                      node_b_arr.push(node_b_from_a.split(/\s*(_|-)\s*/)[-1])
+                      node_ans_hash[node_b_from_a.split(/\s*(_|-)\s*/)[-1]]=node_b_from_a
+                    }
+                    answerandb = answer.answer[answer_a] & node_b_arr
+                    if ! answerandb.empty?
+                      color = "%06x" % (rand * 0xffffff)
+                      io.puts "\"#{lang_A}#{node_a}\" [penwidth=5 color = \"\##{color}\"];"
+                      answerandb.each{|node_b|
+                        io.puts "\"#{lang_B}#{node_ans_hash[node_b]}\" [penwidth=5 color = \"\##{color}\"];"
+                        io.puts "\"#{lang_A}#{node_a}\"->\"#{lang_B}#{node_ans_hash[node_b]}\" [style = dashed color = \"\##{color}\" dir = none];"
+                      }
+                    end
+                  end
+                else
+                  if answer.answer[node_a] && transgraph.lang_a_b[node_a]
+                    answerandb =answer.answer[node_a] & transgraph.lang_a_b[node_a]
+                    if ! answerandb.empty?
+                      color = "%06x" % (rand * 0xffffff)
+                      io.puts "\"#{lang_A}#{node_a}\" [penwidth=5 color = \"\##{color}\"];"
+                      answerandb.each{|node_b|
+                        io.puts "\"#{lang_B}#{node_b}\" [penwidth=5 color = \"\##{color}\"];"
+                        io.puts "\"#{lang_A}#{node_a}\"->\"#{lang_B}#{node_b}\" [style = dashed color = \"\##{color}\" dir = none];"
+                      }
+                    end
                   end
                 end
               end
