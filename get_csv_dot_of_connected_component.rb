@@ -105,19 +105,14 @@ end
 
 #すでに繋がっているトランスグラフごとに分離されているファイルから
 #dotや画像を出力
-#TODO:Ind_Mnk_Zsmの答え自動チェック
 def make_dot_img_from_each_trans
-  # languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn","Zh_Uy_Kz"]
-  # languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn"]
-  languages = ["Ind_Mnk_Zsm"]
-  # language="JaToEn_JaToDe"
+  languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn","Zh_Uy_Kz","Ind_Mnk_Zsm"]
+  is_visualize_has_answer_only=1 #答えがあるグラフのみ表示
   languages.each{|language|
-    # language="JaToEn_JaToDe"
-    # language="Ind_Mnk_Zsm_new"
-    # language="Zh_Uy_Kz"
-    output_filename="visualize_1230/csv/#{language}.csv"
-    output_each_trans_filename="visualize_1230/#{language}/"
 
+    if is_visualize_has_answer_only==1
+      output_each_trans_filename="visualize_1230/answer_only/#{language}/"
+    end
     if language=="Ind_Mnk_Zsm"
       answer_filename="answer/Mnk_Zsm.csv"
       input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
@@ -163,13 +158,14 @@ def make_dot_img_from_each_trans
     end
     answer = Answer.new(answer_filename)
     if languages == "JaToEn_JaToDe" || languages == "JaToEn_EnToDe" || languages == "JaToDe_DeToEn"
-        answer2 = Answer.new(answer_filename2)
+      answer2 = Answer.new(answer_filename2)
     end
     #0番目は巨大なので指定するとstack level too deepになる
     for i_filecount in 1 .. max
 
       # transgraph = Transgraph.new("#{input_filename}_subgraph_#{i_filecount}.csv")
       transgraph = Transgraph.new(input_filename+"#{i_filecount}.csv")
+      has_answer=0
 
       # 空の有向グラフを作る
       g  = RGL::DirectedAdjacencyGraph.new
@@ -244,6 +240,7 @@ def make_dot_img_from_each_trans
                         io.puts "\"#{lang_B}#{node_ans_hash[node_b]}\" [penwidth=5 color = \"\##{color}\"];"
                         io.puts "\"#{lang_A}#{node_a}\"->\"#{lang_B}#{node_ans_hash[node_b]}\" [style = dashed color = \"\##{color}\" dir = none];"
                       }
+                      has_answer=1
                     end
                   end
                 else
@@ -256,6 +253,7 @@ def make_dot_img_from_each_trans
                         io.puts "\"#{lang_B}#{node_b}\" [penwidth=5 color = \"\##{color}\"];"
                         io.puts "\"#{lang_A}#{node_a}\"->\"#{lang_B}#{node_b}\" [style = dashed color = \"\##{color}\" dir = none];"
                       }
+                      has_answer=1
                     end
                   end
                 end
@@ -322,9 +320,11 @@ def make_dot_img_from_each_trans
             io.puts "}"
           end
         end
-        system( "dot -Tjpg '#{output_each_trans_filename}#{i_filecount}.dot' -o #{output_each_trans_filename}#{i_filecount}.jpg" )
-        # i_filecount=i_filecount+1
-        pp i_filecount
+        if is_visualize_has_answer_only==1 && has_answer==1
+          system( "dot -Tjpg '#{output_each_trans_filename}#{i_filecount}.dot' -o #{output_each_trans_filename}#{i_filecount}.jpg" )
+          # i_filecount=i_filecount+1
+          pp i_filecount
+        end
       }
     end
   }
