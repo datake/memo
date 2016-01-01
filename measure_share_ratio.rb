@@ -146,7 +146,7 @@ end
 #3言語辞書データと答えの辞書データを入力
 #pivotの共有率を返す
 def measure_standardized_share_ratio
-  languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn","Zh_Uy_Kz","Ind_Mnk_Zsm"]
+  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm","Zh_Uy_Kz"]
   languages.each{|language|
   # output=0 -> 標準化後の母集団(任意のペア)のピボット共有率
   # output=1 -> 標準化後の答えのペアのピボット共有率
@@ -154,10 +154,10 @@ def measure_standardized_share_ratio
   # output=3 -> いろいろdebug用
   # output=4 -> 標準化前の母集団の平均と分散をだす
   # output=5 -> 標準化前の答えペアの平均と分散をだす
-  # 0.upto(10) do |pivor_connected_fixed|
+  # 0.upto(10) do |pivot_connected_fixed|
   output=2
   is_population_connected_only=1 #母集団の取り方
-  pivor_connected_fixed=2 #ピボット共有率を計測する際の分母(繋がっているノード数)を指定
+  pivot_connected_fixed=1 #ピボット共有率を計測する際の分母(繋がっているノード数)を指定
   output_folder="standardized_share_ratio/"
   min=1
   if language=="Ind_Mnk_Zsm"
@@ -205,11 +205,11 @@ def measure_standardized_share_ratio
         transgraph.node_b.each{|node_b|
           pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
           pivot_share=transgraph.lang_a_p[node_a] & transgraph.lang_b_p[node_b]#setの共通部分
-          if is_population_connected_only==1 && pivot_connected.size==0 #ここ間違えてた
+          if is_population_connected_only==1 && pivot_connected.size==0 #繋がっていないものがある場合は母集団としカウントしない
             # print("とばす")
           else
-            # if pivot_connected != 1
-            if pivot_connected.size == pivor_connected_fixed
+            if pivot_connected.size > 1 #母集団のピボット共有率の分母が1の場合はランダム要素が多いので弾く
+            # if pivot_connected.size == pivot_connected_fixed
               pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
               pivot_share_num.push(pivot_share.size)
               share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
@@ -235,9 +235,10 @@ def measure_standardized_share_ratio
                       kvstring+="#{answer_key} and #{answer_value} exists"
                       pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
                       pivot_share=transgraph.lang_a_p[node_a] & transgraph.lang_b_p[node_b]#setの共通部分
-                      if pivot_connected.size == pivor_connected_fixed
+                      if pivot_connected.size > 1 #答えペアのピボット共有率の分母が1の場合はランダム要素が多いので弾く
+                      # if pivot_connected.size == pivot_connected_fixed
                         #答えがもともと繋がっていない場合は省く
-                        if pivot_share != 0
+                        if pivot_share.size != 0
                           pivot_connected_num_answer.push(pivot_connected.size)#node_bとnode_aと接続しているpivot
                           pivot_share_num_answer.push(pivot_share.size)
                           share_ratio_answer.push(pivot_share_num_answer[-1].fdiv(pivot_connected_num_answer[-1])) #pivotの共有
@@ -255,11 +256,10 @@ def measure_standardized_share_ratio
                   kvstring+="#{answer_key} and #{answer_value} exists"
                   pivot_connected=transgraph.lang_a_p[answer_key] + transgraph.lang_b_p[answer_value]#setの和部分
                   pivot_share=transgraph.lang_a_p[answer_key] & transgraph.lang_b_p[answer_value]#setの共通部分
-                  # ピボット共有率が1/1の場合はランダム要素が多いので省く
-                  # if pivot_connected != 1 || pivot_share != 1
-                  if pivot_connected.size ==pivor_connected_fixed
+                  if pivot_connected.size > 1 #答えペアのピボット共有率の分母が1の場合はランダム要素が多いので弾く
+                  # if pivot_connected.size ==pivot_connected_fixed
                     #答えがもともと繋がっていない場合は省く
-                    if pivot_share !=0
+                    if pivot_share.size !=0
                       pivot_connected_num_answer.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
                       pivot_share_num_answer.push(pivot_share.size)
                       share_ratio_answer.push(pivot_share_num_answer[-1].fdiv(pivot_connected_num_answer[-1])) #pivotの共有率
@@ -391,7 +391,8 @@ def measure_standardized_share_ratio
     File.open(output_folder+"average_of_average_of_sr.csv", "a") do |io_average_of_average|
       pp "標準化後の平均(一トランスグラフ内)の平均(全てのトランスグラフでの)"
       pp all_trans_sr_standardized.avg
-      io_average_of_average.puts("#{language},"+all_trans_sr_standardized.avg.to_s+",#{pivor_connected_fixed}")
+      # io_average_of_average.puts("#{language},"+all_trans_sr_standardized.avg.to_s+",#{pivot_connected_fixed}")
+      io_average_of_average.puts("#{language},"+all_trans_sr_standardized.avg.to_s)
     end
   end
   # end
