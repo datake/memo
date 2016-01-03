@@ -399,6 +399,253 @@ def measure_standardized_share_ratio
   }
 end
 
+#共有するpivot数
+def measure_standardized_shared_pivot
+  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Zh_Uy_Kz","Ind_Mnk_Zsm"]
+  languages.each{|language|
+  # output=0 -> 標準化後の母集団(任意のペア)のピボット共有率
+  # output=1 -> 標準化後の答えのペアのピボット共有率
+  # output=2 -> 標準化後の答えペアのピボット共有率のトランスグラフ平均(一つのトランスグラフに複数答えあったらまとめる)
+  # output=4 -> 標準化前の母集団、標準化前の答えペアの平均と分散をだす
+  # output=5 -> ピボットを共有しているものだけの情報
+  2.upto(15) do |pivor_connected_fixed|
+  output=5
+  is_population_connected_only=1 #母集団の取り方
+  # pivor_connected_fixed=2 #ピボット共有率を計測する際の分母(繋がっているノード数)を指定
+  output_folder="standardized_share_ratio/connected_pivot/"
+  input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+  min=0
+  if language=="Ind_Mnk_Zsm"
+    answer_filename="answer/Mnk_Zsm.csv"
+    max=155 #Indのときだけ0からはじめる
+    min=0
+  elsif language=="JaToEn_JaToDe"
+    answer_filename="answer/En_De.csv"
+    max=389
+  elsif language=="JaToEn_EnToDe"
+    max=453
+    answer_filename="answer/Ja_De.csv"
+  elsif language=="JaToDe_DeToEn"
+    max=364
+    answer_filename="answer/Ja_En.csv"
+  elsif language=="Zh_Uy_Kz"
+    max=1475
+    answer_filename="answer/answer_UK_distance1_ruby_each_trans.csv"
+  end
+  answer = Answer.new(answer_filename)
+  all_trans_sr_standardized=Array.new
+  all_trans_pivot_shared=Array.new
+  all_trans_pivot_shared_ans=Array.new
+  all_trans_pivot_shared_ans_standardized=Array.new
+
+  min.upto(max) do |i|
+    begin
+      # pp "****************#{i}******************"
+      transgraph = Transgraph.new(input_filename+"#{i}.csv")
+      # pp transgraph.nofde_a
+      pivot_connected=Set.new
+      pivot_share=Set.new
+      raw_output={}
+      each_trans_sr_standardized=Array.new
+      each_shared_pivot_standardized=Array.new
+
+      pivot_connected_num=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
+      pivot_share_num=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
+      share_ratio=Array.new #pivotの共有率
+
+      # 母集団データのピボット共有率の計測
+      transgraph.node_a.each{|node_a|
+        transgraph.node_b.each{|node_b|
+          pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
+          pivot_share=transgraph.lang_a_p[node_a] & transgraph.lang_b_p[node_b]#setの共通部分
+          if is_population_connected_only==1 && pivot_connected.size==0
+            # print("とばす")
+          else
+            if pivot_connected.size == pivor_connected_fixed
+            # if pivot_connected.size >= 0
+              pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
+              pivot_share_num.push(pivot_share.size)
+              all_trans_pivot_shared.push(pivot_share.size)
+              pp "母集団#{pivot_share.size}-(#{pivor_connected_fixed})"
+              share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
+            end
+          end
+        }
+      }
+      pivot_connected_num_answer=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
+      pivot_share_num_answer=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
+      share_ratio_answer=Array.new #pivotの共有率
+      has_answer=0
+      kvstring=""
+
+      #答えのピボット共有率
+      answer.answer.each{|answer_key, answer_values|
+        if answer_values
+          answer_values.each{|answer_value|#全てのanswerのA-Bについて走査
+            if language=="Ind_Mnk_Zsm"
+              transgraph.node_a.each{|node_a|
+                if answer_key == node_a.split(/\s*(_|-)\s*/)[-1] #Mnkが同じ
+                  transgraph.lang_a_b[node_a].each{|node_b|
+                    if answer_value == node_b.split(/\s*(_|-)\s*/)[-1] #Zsmが同じ
+                      # kvstring+="#{answer_key} and #{answer_value} exists"
+                      pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
+                      pivot_share=transgraph.lang_a_p[node_a] & transgraph.lang_b_p[node_b]#setの共通部分
+                      if pivot_connected.size == pivor_connected_fixed
+                        if pivot_share.size != 0 #答えがもともと繋がっていない場合は省く
+                          pivot_connected_num_answer.push(pivot_connected.size)#node_bとnode_aと接続しているpivot
+                          pivot_share_num_answer.push(pivot_share.size)
+                          all_trans_pivot_shared_ans.push(pivot_share.size)
+                          share_ratio_answer.push(pivot_share_num_answer[-1].fdiv(pivot_connected_num_answer[-1])) #pivotの共有
+                          pp "こたえあり#{pivot_share.size}-(#{pivor_connected_fixed})"
+                        end
+                      end
+                    end
+                  }
+                end
+              }
+            else
+              if transgraph.lang_a_b.has_key?(answer_key)#同じ日本語の見出し語があるか
+                if transgraph.lang_a_b[answer_key].include?(answer_value)#同じドイツ語の単語があるか
+                  kvstring+="#{answer_key} and #{answer_value} exists"
+                  pivot_connected=transgraph.lang_a_p[answer_key] + transgraph.lang_b_p[answer_value]#setの和部分
+                  pivot_share=transgraph.lang_a_p[answer_key] & transgraph.lang_b_p[answer_value]#setの共通部分
+                  # ピボット共有率が1/1の場合はランダム要素が多いので省く
+                  if pivot_connected.size == pivor_connected_fixed
+                    if pivot_share.size !=0 #答えがもともと繋がっていない場合は省く
+                      pivot_connected_num_answer.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
+                      pivot_share_num_answer.push(pivot_share.size)
+                      all_trans_pivot_shared_ans.push(pivot_share.size)
+                      share_ratio_answer.push(pivot_share_num_answer[-1].fdiv(pivot_connected_num_answer[-1])) #pivotの共有率
+                      pp "こたえあり#{pivot_share.size}-(#{pivor_connected_fixed})"
+                    end
+                  end
+                end
+              end
+            end
+          }
+        end
+      }
+
+      if share_ratio_answer.size>0 && share_ratio.size>0
+        pp "****************#{i}******************"
+        if output == 0 # 標準化後の母集団(任意のペア)のピボット共有率
+          File.open(output_folder+"standardized_population_sr_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
+            if share_ratio.standard_deviation !=0
+              share_ratio.each{|sr|
+                pp (sr-share_ratio.avg)/share_ratio.standard_deviation
+                io.puts (sr-share_ratio.avg)/share_ratio.standard_deviation
+              }
+            else
+              # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+              share_ratio.each{|sr|
+                puts "0"
+                io.puts 0
+                # all_trans_sr_standardized.push(0)
+              }
+            end
+          end
+        elsif output == 1 # 標準化後の答えのペアのピボット共有率
+          File.open(output_folder+"standardized_answer_sr_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
+            if share_ratio.standard_deviation !=0
+              share_ratio_answer.each{|sr_answer|
+                pp (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
+                io.puts (sr_answer-share_ratio.avg)/share_ratio.standard_deviation
+              }
+            else
+              # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+              share_ratio_answer.each{|sr_answer|
+                puts "0"
+                io.puts 0
+              }
+            end
+          end
+        elsif output == 2 # 標準化後の答えペアのピボット共有率のトランスグラフ平均(一つのトランスグラフに複数答えあったらまとめる)
+          if share_ratio.standard_deviation !=0
+            share_ratio_answer.each{|sr_answer|
+              each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
+            }
+          else
+            # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+            share_ratio_answer.each{|sr_answer|
+              each_trans_sr_standardized.push(0)
+            }
+          end
+          File.open(output_folder+"average_answer_sr_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
+            io.puts i.to_s+","+each_trans_sr_standardized.avg.to_s+","+kvstring
+          end
+          pp each_trans_sr_standardized.avg
+          all_trans_sr_standardized.push(each_trans_sr_standardized.avg)
+        elsif output==4
+          File.open(output_folder+"population_average.csv", "a") do |io_average|
+            io_average.puts("#{language},"+share_ratio.avg.to_s+",#{pivor_connected_fixed}")
+            pp "標準化前の平均(一トランスグラフ内)の平均(全てのトランスグラフでの)"
+            pp share_ratio.avg
+          end
+          File.open(output_folder+"answer_average.csv", "a") do |io_average|
+            io_average.puts("#{language},"+share_ratio_answer.avg.to_s+",#{pivor_connected_fixed}")
+            pp "標準化前の平均(一トランスグラフ内)の平均(全てのトランスグラフでの)"
+            pp share_ratio_answer.avg
+          end
+          share_ratio
+        elsif output==5
+          # File.open(output_folder+"shared_pivot.csv", "a") do |io_shared|
+          #   io_shared.puts("#{language},"+pivot_share_num.avg.to_s+","+pivot_share_num.size.to_s+",#{pivor_connected_fixed}")
+          # end
+          # File.open(output_folder+"shared_pivot_ans.csv", "a") do |io_shared_ans|
+          #   io_shared_ans.puts("#{language},"+pivot_share_num_answer.avg.to_s+","+pivot_share_num_answer.size.to_s+",#{pivor_connected_fixed}")
+          # end
+          # all_trans_pivot_shared.push(pivot_share_num.avg)
+          # all_trans_pivot_shared_ans.push(pivot_share_num_answer.avg)
+          # all_trans_pivot_shared_ans_standardized.push(each_shared_pivot_standardized.avg)
+        end
+      end
+    rescue => ex
+      puts ex.message
+      next
+    end
+  end
+  if output == 2
+    File.open(output_folder+"average_of_average_of_sr.csv", "a") do |io_average_of_average|
+      pp "標準化後の平均(一トランスグラフ内)の平均(全てのトランスグラフでの)"
+      pp all_trans_sr_standardized.avg
+      io_average_of_average.puts("#{language},"+all_trans_sr_standardized.avg.to_s+",#{pivor_connected_fixed}")
+    end
+  end
+  if output == 5
+=begin
+    File.open(output_folder+"average_of_average_of_sp.csv", "a") do |io_average_of_average|
+      pp "共有するピボット数の平均(一トランスグラフ内)の平均(全てのトランスグラフでの)"
+      pp all_trans_pivot_shared.avg
+      io_average_of_average.puts("#{language},"+all_trans_pivot_shared.avg.to_s+",#{pivor_connected_fixed}")
+    end
+    File.open(output_folder+"average_of_average_of_sp_ans.csv", "a") do |io_average_of_average|
+      pp "共有する答えピボット数の平均(一トランスグラフ内)の平均(全てのトランスグラフでの)"
+      pp all_trans_pivot_shared_ans.avg
+      io_average_of_average.puts("#{language},"+all_trans_pivot_shared_ans.avg.to_s+",#{pivor_connected_fixed}")
+    end
+=end
+
+    #標準化
+    # pivot_share_num_answerをpivot_share_numをもとに標準化
+    if all_trans_pivot_shared_ans.standard_deviation !=0
+      all_trans_pivot_shared_ans.each{|shared_pivot|
+        all_trans_pivot_shared_ans_standardized.push((shared_pivot-all_trans_pivot_shared.avg)/all_trans_pivot_shared.standard_deviation)
+      }
+    else
+      # 標準偏差が0ということはすべてのpivot_share_numの値が同じとき
+      all_trans_pivot_shared_ans.each{|shared_pivot|
+        all_trans_pivot_shared_ans_standardized.push(0)
+      }
+    end
+    File.open(output_folder+"average_of_average_of_sp_ans_standardized.csv", "a") do |io_average_of_average|
+      pp "標準化した共有する答えピボット数の平均(一トランスグラフ内)の平均(全てのトランスグラフでの)"
+      # pp all_trans_pivot_shared_ans_standardized.avg
+      io_average_of_average.puts("#{language},"+all_trans_pivot_shared_ans_standardized.avg.to_s+",#{pivor_connected_fixed}")
+    end
+  end
+  end
+  }
+end
 
 #3言語辞書データと答えの辞書データを入力
 #pivotの共有率を返す
