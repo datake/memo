@@ -14,8 +14,8 @@ LANG_A="Mnk_"
 LANG_B="Zsm_"
 LANG_P="Ind_"
 def main
-  make_dot_img_from_each_trans
-  # get_csv_dot_of_connected_component
+  # make_dot_img_from_each_trans
+  get_csv_dot_of_connected_component
   # get_pass_pivot
 end
 
@@ -334,20 +334,19 @@ end
 # => 入力:"pivot","a1,a2,a3..","b1,b2,b3"となっている入力ファイル
 # => 出力:出力ファイルに「トランスグラフのpivotが2以上、ノードが7以上」という条件を満たしたトランスグラフごとの
 # => png,dot,csvを connected_components/each_trans/ 以下にファイル出力
-# => 日独、ウイグルカザフなどのグラフ数の多いデータはeach_connected_componentでstack level too deepのエラー出るので
-# => 実質インドネシアのデータでしか使えない。
-# => 今後Pythonのnetworkxのconnected_component_subgraphsを使う
+# => 日独、ウイグルカザフなどのグラフ数の多いデータはeach_connected_componentでstack level too deepのエラー出る
+# => でもなぜかインドネシアの品詞なしデータではPythonでうまくいかないのでこっちつかう。
 
 def get_csv_dot_of_connected_component
   # which_lang="JaToEn_EnToDe"
-  # which_lang="Ind_Mnk_Zsm_new"
-  which_lang="Zh_Uy_Kz"
-  # input_filename="share_ratio/#{which_lang}.csv"
-  input_filename="simulation/csv/2-4-4.csv"
+  which_lang="Ind_Mnk_Zsm_new"
+  # which_lang="Zh_Uy_Kz"
+  input_filename="share_ratio/#{which_lang}.csv"
+  # input_filename="simulation/csv/2-4-4.csv"
   # output_filename="connected_components1208/#{which_lang}.csv"
   # output_each_trans_filename="connected_components1208/test/#{which_lang}"
-  output_filename="simulation/2-4-4.csv"
-  output_each_trans_filename="simulation/image/2-4-4/2-4-4"
+  output_filename="partition_graph_1227/Ind_Mnk_Zsm_hinsinashi/"
+  output_each_trans_filename="partition_graph_1227/Ind_Mnk_Zsm_hinsinashi/Ind_Mnk_Zsm_subgraph"
 
   transgraph = Transgraph.new(input_filename)
 
@@ -403,13 +402,6 @@ def get_csv_dot_of_connected_component
     }
   }
   passed_pivot.sort!
-
-  File.open(output_filename, "w") do |io|
-    passed_pivot.each{|tmp_pivot|
-      io.puts tmp_pivot
-    }
-  end
-
   #transgraph情報をファイル出力
   i=0
   i_filecount=0
