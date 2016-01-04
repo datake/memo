@@ -146,7 +146,8 @@ end
 #3言語辞書データと答えの辞書データを入力
 #pivotの共有率を返す
 def measure_standardized_share_ratio
-  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm","Zh_Uy_Kz"]
+  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm2","Zh_Uy_Kz"]
+  # 1.upto(10) do |pivot_connected_fixed|
   languages.each{|language|
   # output=0 -> 標準化後の母集団(任意のペア)のピボット共有率
   # output=1 -> 標準化後の答えのペアのピボット共有率
@@ -157,7 +158,7 @@ def measure_standardized_share_ratio
   # 0.upto(10) do |pivot_connected_fixed|
   output=2
   is_population_connected_only=1 #母集団の取り方
-  pivot_connected_fixed=1 #ピボット共有率を計測する際の分母(繋がっているノード数)を指定
+  # pivot_connected_fixed=2 #ピボット共有率を計測する際の分母(繋がっているノード数)を指定
   output_folder="standardized_share_ratio/"
   min=1
   if language=="Ind_Mnk_Zsm"
@@ -165,6 +166,10 @@ def measure_standardized_share_ratio
     input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
     max=155 #Indのときだけ0からはじめる
     min=0
+  elsif language=="Ind_Mnk_Zsm2" #品詞なしの場合
+    input_filename="partition_graph_1227/Ind_Mnk_Zsm_hinsinashi0104/Ind_Mnk_Zsm_subgraph_"
+    answer_filename="answer/Mnk_Zsm.csv"
+    max=252
   elsif language=="JaToEn_JaToDe"
     input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
     answer_filename="answer/En_De.csv"
@@ -182,12 +187,12 @@ def measure_standardized_share_ratio
     input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
     # answer_filename="answer/Uy_Kz_answer_has_many.csv"
     # answer_filename="answer/Uy_Kz.csv"
-    answer_filename="answer/answer_UK_distance1_ruby_each_trans.csv"
+    answer_filename="answer/Marhaba_and_1distance.csv"
   end
   answer = Answer.new(answer_filename)
   all_trans_sr_standardized=Array.new
   min.upto(max) do |i|
-    begin
+    # begin
       # pp "****************#{i}******************"
       transgraph = Transgraph.new(input_filename+"#{i}.csv")
       # pp transgraph.nofde_a
@@ -210,9 +215,16 @@ def measure_standardized_share_ratio
           else
             if pivot_connected.size > 1 #母集団のピボット共有率の分母が1の場合はランダム要素が多いので弾く
             # if pivot_connected.size == pivot_connected_fixed
-              pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
-              pivot_share_num.push(pivot_share.size)
-              share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
+              if answer.answer.has_key?(node_a) && answer.answer[node_a].include?(node_b)
+                pp "母集団から除外"
+                pp answer.answer[node_a]
+                pp node_a
+                pp node_b
+              else
+                pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
+                pivot_share_num.push(pivot_share.size)
+                share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
+              end
             end
           end
         }
@@ -276,7 +288,7 @@ def measure_standardized_share_ratio
         end
       }
 
-      if share_ratio_answer.size>0 #&& has_answer==1
+      if share_ratio_answer.size > 0 && share_ratio.size > 0
         pp "****************#{i}******************"
         if output == 0 # 標準化後の母集団(任意のペア)のピボット共有率
           File.open(output_folder+"standardized_population_sr_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
@@ -382,10 +394,6 @@ def measure_standardized_share_ratio
           end
         end
       end
-    rescue => ex
-      puts ex.message
-      next
-    end
   end
   if output == 2
     File.open(output_folder+"average_of_average_of_sr.csv", "a") do |io_average_of_average|
@@ -395,8 +403,8 @@ def measure_standardized_share_ratio
       io_average_of_average.puts("#{language},"+all_trans_sr_standardized.avg.to_s)
     end
   end
-  # end
   }
+# end
 end
 
 #共有するpivot数
