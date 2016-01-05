@@ -4,9 +4,9 @@ require 'logger'
 require 'set'
 
 def main
-   measure_share_ratio
+  #  measure_share_ratio
   # measure_common_words
-  #measure_common_headword
+  measure_common_headword
 end
 
 class Transgraph
@@ -126,11 +126,17 @@ def measure_common_headword
       in2_only_key=in2_only_key+1
     end
   }
+  pp "入力辞書1のサイズ"
   pp in1.size
+  pp "入力辞書2のサイズ"
   pp in2.size
+  pp "入力辞書1と2共有のサイズ"
   pp common_key1
+  pp "入力辞書1と2共有のサイズ"
   pp common_key2
+  pp "入力辞書1のみのサイズ"
   pp in1_only_key
+  pp "入力辞書2のみのサイズ"
   pp in2_only_key
 
 end
