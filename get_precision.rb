@@ -3,8 +3,8 @@ require 'pp'
 require 'logger'
 
 def main
-  get_precision_from_2dict
-  # get_precision_from_1dict
+  # get_precision_from_2dict
+  get_precision_from_1dict
   # get_precision_from_zukind
 end
 
@@ -128,7 +128,7 @@ end
 #答えの辞書データのkeyがuniqueではない
 def get_precision_from_1dict
 
-  language="Ind_Mnk_Zsm"
+  language="JaToEn_EnToDe0105"
 
   if language=="Zh_Uy_Kz"
     oofile_num=1480
@@ -148,6 +148,10 @@ def get_precision_from_1dict
     input_folder="1-1/buffer2_JaEn_EnDe_456/graph_"
     answer_filename="answer/Ja_De.csv"
     # answer_filename2="answer/De_Ja.csv"
+  elsif language=="JaToEn_EnToDe0105"
+      oofile_num=207
+      input_folder="1-1/buffer2_JaToEn_EnToDe0105_207/graph_"
+      answer_filename="answer/Ja_De.csv"
   elsif language=="JaToEn_JaToDe"
     oofile_num=404
     input_folder="1-1/buffer2_JaEn_JaDe_404/graph_"
@@ -178,7 +182,8 @@ def get_precision_from_1dict
           is_not_included=0
           #rows[1] -> 日本語
           #rows[2] -> ドイツ語
-          if answer.answer.has_key?(rows[1]) &&  answer.answer_head_trans.has_key?(rows[2])
+          if language="JaToEn_EnToDe0105"
+            # if answer.answer.has_key?(rows[1]) &&  answer.answer_head_trans.has_key?(rows[2])
             if answer.answer[rows[1]].include?(rows[2])
               is_true=1
             elsif answer.answer_head_trans[rows[2]].include?(rows[1])
@@ -186,8 +191,21 @@ def get_precision_from_1dict
             else
               is_false=1
             end
+            # else
+            #   is_not_included=1
+            # end
           else
-            is_not_included=1
+            if answer.answer.has_key?(rows[1]) &&  answer.answer_head_trans.has_key?(rows[2])
+              if answer.answer[rows[1]].include?(rows[2])
+                is_true=1
+              elsif answer.answer_head_trans[rows[2]].include?(rows[1])
+                is_true=1
+              else
+                is_false=1
+              end
+            else
+              is_not_included=1
+            end
           end
           if is_true ==1
             io.puts(num.to_s+","+rows[1]+","+rows[2]+",1,0,0")
