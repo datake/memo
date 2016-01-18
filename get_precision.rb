@@ -279,7 +279,20 @@ def convert_from_mardan_1to1
       for num in 1 .. oofile_num do
         begin
           CSV.foreach(input_folder + num.to_s + ".oo", :col_sep => "\t") do |rows|
-            io.puts(rows[1]+","+rows[2])
+            is_true_false=-1 #1:正解,2:不正解,3:判定不能
+            if answer.answer.has_key?(rows[1]) &&  answer.answer_head_trans.has_key?(rows[2])
+              if answer.answer[rows[1]].include?(rows[2])
+                is_true_false=1
+              elsif answer.answer_head_trans[rows[2]].include?(rows[1])
+                is_true_false=1
+              else
+                is_true_false=2
+              end
+            else
+              is_true_false=3
+            end
+
+            io.puts(rows[1]+","+rows[2]+","+is_true_false.to_s)
           end
         rescue => error
           pp error.message
