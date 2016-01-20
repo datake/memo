@@ -1,3 +1,4 @@
+precision/
 Uy-Kz/
 count_node_edge/
 visualize_1216/
@@ -6,7 +7,6 @@ de_edge/
 input/
 output/
 buffer2/
-answer/
 joinedcon/
 validation/
 a.out
@@ -30,3 +30,13 @@ connected_components1208/
 partition_and_count1209/
 partition_big/
 partition_graph1210/
+visualize_1230/
+visualize_simulation/
+weighted_average/
+zuk_1125/
+weighted_average_ペアごとに計測したもの/
+weighted_average_エッジ数で加重平均/
+0105/
+answer/
+generate_transgraph/
+generated_trans_from_real/
