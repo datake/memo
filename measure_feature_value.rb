@@ -671,6 +671,7 @@ def measure_weighted_verage_feature_value
           pivot_share_num=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
           share_ratio=Array.new #pivotの共有率
           precision_arr=Array.new
+          each_trans_sr_standardized=Array.new
           string_precision=""
 
           #適合率計算用
@@ -692,30 +693,7 @@ def measure_weighted_verage_feature_value
             }
           }
 
-          #このトランスグラフの適合率を計測するのにaだけ走査
-          # transgraph.node_a.each{|node_a_result|
-          #   if one_to_one.result.has_key?(node_a_result)
-          #     node_b_result=one_to_one.result[node_a_result]
-          #     is_true_false_ab=one_to_one.is_true[node_a_result][node_b_result][0].to_i
-          #     if is_true_false_ab==1 #正解
-          #       precision_arr.push(1)
-          #       string_precision+="True->#{node_a_result}:#{node_b_result},"
-          #     elsif is_true_false_ab==2 #不正解
-          #       precision_arr.push(0)
-          #       string_precision+="False->#{node_a_result}:#{node_b_result}."
-          #     else
-          #       pp "正解不正解判断できず"
-          #       pp node_a_result
-          #       pp node_b_result
-          #       pp is_true_false_ab
-          #     end
-          #   end
-          # }
-
-
           reachable_node_num_arr=Array.new #pivotの共有率
-          # has_answer=0
-          # kvstring=""
 
           pivot_connected_num_answer=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
           pivot_share_num_answer=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
@@ -760,29 +738,35 @@ def measure_weighted_verage_feature_value
                         }
                       }
                       reachable_node_num_arr.push(reachable_node_num)
-                      reachable_of_this_pair=reachable_node_num
-
-                      #標準化 ファイル書き込み
-                      if share_ratio.standard_deviation !=0
-                        normalized_share_ratio_of_this_pair=(sr_of_this_pair-share_ratio.avg)/share_ratio.standard_deviation
-                        #ここだいじ
-                        all_sr_devide_reachable.push(normalized_share_ratio_of_this_pair)
-                        all_reachable_target.push(reachable_of_this_pair)
-                        io.puts transgraph_itr.to_s+",#{answer_key},#{answer_value},"+(normalized_share_ratio_of_this_pair/reachable_of_this_pair).to_s+","+reachable_of_this_pair.to_s+","+normalized_share_ratio_of_this_pair.to_s
-
-                      else
-                        # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
-                        normalized_share_ratio_of_this_pair=0
-                        all_sr_devide_reachable.push(0)
-                        all_reachable_target.push(reachable_of_this_pair)
-                        io.puts transgraph_itr.to_s+",#{answer_key},#{answer_value},"+(normalized_share_ratio_of_this_pair/reachable_of_this_pair).to_s+","+reachable_of_this_pair.to_s+","+normalized_share_ratio_of_this_pair.to_s
-                      end
                     end
                   end
                 end
               }
             end
           }
+
+          if share_ratio_answer.size > 0 && share_ratio.size > 0
+            if share_ratio.standard_deviation !=0
+              share_ratio_answer.each{|sr_answer|
+                each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
+              }
+            else
+              # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+              share_ratio_answer.each{|sr_answer|
+                each_trans_sr_standardized.push(0)
+              }
+            end
+            all_sr_devide_reachable.push(each_trans_sr_standardized.avg.to_f/reachable_node_num_arr.avg.to_f)
+            all_reachable_target.push(reachable_node_num_arr.avg)
+            pp "ファイル書き込み"
+            print_line= transgraph_itr.to_s+","+reachable_node_num_arr.avg.to_s+","+each_trans_sr_standardized.avg.to_s+","+kvstring
+            pp print_line
+            # File.open(output_folder+"precision/features_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
+            io.puts print_line
+            # end
+
+          end
+
         end #一言語での全てのトランスグラフ
         denominator=all_sr_devide_reachable.inject {|sum, n| sum + n }
         numerator=0
