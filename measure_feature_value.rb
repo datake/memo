@@ -5,7 +5,7 @@ require 'set'
 require 'unf'
 
 def main
-  measure_feature_value_precision
+  measure_weighted_verage_feature_value
 
 end
 class Array
@@ -606,6 +606,195 @@ def measure_feature_value_precision
 
 
 end
+
+
+def measure_weighted_verage_feature_value
+  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm2","Zh_Uy_Kz"]
+
+  languages.each{|language|
+
+    is_population_connected_only=1 #母集団の取り方
+    # pivot_connected_fixed=2 #ピボット共有率を計測する際の分母(繋がっているノード数)を指定
+    output_folder="weighted_average/"
+    min=1
+    if language=="Ind_Mnk_Zsm"
+      answer_filename="answer/Mnk_Zsm.csv"
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      max=155 #Indのときだけ0からはじめる
+      min=0
+    elsif language=="Ind_Mnk_Zsm2" #品詞なしの場合
+      input_filename="partition_graph_1227/Ind_Mnk_Zsm_hinsinashi0104/Ind_Mnk_Zsm_subgraph_"
+      answer_filename="answer/Mnk_Zsm.csv"
+      one_to_one_filename="Ind_Mnk_Zsm"
+      max=252
+    elsif language=="JaToEn_JaToDe"
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      answer_filename="answer/En_De.csv"
+      one_to_one_filename="JaToEn_JaToDe"
+      max=389
+    elsif language=="JaToEn_EnToDe"
+      max=453
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      answer_filename="answer/Ja_De.csv"
+      one_to_one_filename="JaToEn_EnToDe"
+    elsif language=="JaToDe_DeToEn"
+      max=364
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      answer_filename="answer/Ja_En.csv"
+      one_to_one_filename="JaToDe_DeToEn"
+
+    elsif language=="Zh_Uy_Kz"
+      max=1475
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      # answer_filename="answer/Uy_Kz_answer_has_many.csv"
+      # answer_filename="answer/Uy_Kz.csv"
+      answer_filename="answer/Marhaba_and_1distance.csv"
+      one_to_one_filename="Zh_Uy_Kz"
+    end
+    answer = Answer.new(answer_filename)
+    one_to_one = Result.new("1-1/csv/"+one_to_one_filename+".csv")
+
+    all_trans_sr_standardized=Array.new
+    File.open(output_folder+"features_#{language}.csv", "w") do |io|
+      #重要
+      pair_reachable=Array.new
+      pair_standardized_share_ratio=Array.new
+
+      min.upto(max) do |transgraph_itr|
+        transgraph = Transgraph.new(input_filename+"#{transgraph_itr}.csv")
+        pivot_connected=Set.new
+        pivot_share=Set.new
+        raw_output={}
+        each_trans_sr_standardized=Array.new
+
+        pivot_connected_num=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
+        pivot_share_num=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
+        share_ratio=Array.new #pivotの共有率
+        precision_arr=Array.new
+        string_precision=""
+
+        #適合率計算用
+        is_true=0
+        is_false=0
+        is_not_included=0
+        # 母集団データのピボット共有率の計測
+        transgraph.node_a.each{|node_a|
+          transgraph.node_b.each{|node_b|
+            pivot_connected=transgraph.lang_a_p[node_a] + transgraph.lang_b_p[node_b]#setの和部分
+            pivot_share=transgraph.lang_a_p[node_a] & transgraph.lang_b_p[node_b]#setの共通部分
+            if is_population_connected_only==1 && pivot_connected.size==0 #繋がっていないものがある場合は母集団としカウントしない
+              # print("とばす")
+            else
+              pivot_connected_num.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
+              pivot_share_num.push(pivot_share.size)
+              share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
+            end
+          }
+        }
+
+        #このトランスグラフの適合率を計測するのにaだけ走査
+        # transgraph.node_a.each{|node_a_result|
+        #   if one_to_one.result.has_key?(node_a_result)
+        #     node_b_result=one_to_one.result[node_a_result]
+        #     is_true_false_ab=one_to_one.is_true[node_a_result][node_b_result][0].to_i
+        #     if is_true_false_ab==1 #正解
+        #       precision_arr.push(1)
+        #       string_precision+="True->#{node_a_result}:#{node_b_result},"
+        #     elsif is_true_false_ab==2 #不正解
+        #       precision_arr.push(0)
+        #       string_precision+="False->#{node_a_result}:#{node_b_result}."
+        #     else
+        #       pp "正解不正解判断できず"
+        #       pp node_a_result
+        #       pp node_b_result
+        #       pp is_true_false_ab
+        #     end
+        #   end
+        # }
+
+
+        reachable_node_num_arr=Array.new #pivotの共有率
+        # has_answer=0
+        # kvstring=""
+
+        pivot_connected_num_answer=Array.new #答えのA-Bペアのどちらかと繋がっているpivotの数
+        pivot_share_num_answer=Array.new #答えのA-Bペアの両方と繋がっているpivotの数
+        share_ratio_answer=Array.new #pivotの共有率
+        has_answer=0
+        kvstring=""
+        reachable_node_num_answer=Array.new #pivotの共有率
+        reachable_node_num_answer=0
+        is_already_reachable_answer={}
+
+        #答えのピボット共有率
+        answer.answer.each{|answer_key, answer_values|
+          if answer_values
+            answer_values.each{|answer_value|#全てのanswerのA-Bについて走査
+              # is_already_reachable_answer={}
+              if transgraph.lang_a_b.has_key?(answer_key)#同じ日本語の見出し語があるか
+                if transgraph.lang_a_b[answer_key].include?(answer_value)#同じドイツ語の単語があるか
+                  pp "#{answer_key} & #{answer_value} exists"
+                  kvstring+="#{answer_key} and #{answer_value} exists"
+                  pivot_connected=transgraph.lang_a_p[answer_key] + transgraph.lang_b_p[answer_value]#setの和部分
+                  pivot_share=transgraph.lang_a_p[answer_key] & transgraph.lang_b_p[answer_value]#setの共通部分
+
+                  #答えがもともと繋がっていない場合は省く
+                  if pivot_share.size > 0 && share_ratio.size > 0
+                    #こたえペアのピボット共有率計測
+                    pivot_connected_num_answer.push(pivot_connected.size)#answer_valueとanswer_keyと接続しているpivot
+                    pivot_share_num_answer.push(pivot_share.size)
+                    sr_of_this_pair=pivot_share_num_answer[-1].fdiv(pivot_connected_num_answer[-1])
+
+                    share_ratio_answer.push(sr_of_this_pair) #pivotの共有率
+                    #reachable計測
+                    reachable_node_num=0
+                    is_already_reachable={}
+                    transgraph.lang_a_p[answer_key].each{|reachable_pivot|
+                      transgraph.lang_p_b[reachable_pivot].each{|reachable_target|
+                        if is_already_reachable.has_key?(reachable_target) && is_already_reachable[reachable_target]==1
+                          pp "reachableすでに登録済み"
+                        else
+                          reachable_node_num+=1
+                          is_already_reachable[reachable_target]=1
+                        end
+                      }
+                    }
+                    reachable_node_num_arr.push(reachable_node_num)
+                    reachable_of_this_pair=reachable_node_num
+
+                    #標準化 ファイル書き込み
+                    if share_ratio.standard_deviation !=0
+                      normalized_share_ratio_of_this_pair=(sr_of_this_pair-share_ratio.avg)/share_ratio.standard_deviation
+                      #ここだいじ
+                      each_trans_sr_standardized.push(normalized_share_ratio_of_this_pair)
+                      io.puts transgraph_itr.to_s+",#{answer_key},#{answer_value},"+(normalized_share_ratio_of_this_pair/reachable_of_this_pair).to_s+","+reachable_of_this_pair.to_s+","+normalized_share_ratio_of_this_pair.to_s
+
+                    else
+                      # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
+                      normalized_share_ratio_of_this_pair=0
+                      each_trans_sr_standardized.push(0)
+                      io.puts transgraph_itr.to_s+",#{answer_key},#{answer_value},"+(normalized_share_ratio_of_this_pair/reachable_of_this_pair).to_s+","+reachable_of_this_pair.to_s+","+normalized_share_ratio_of_this_pair.to_s
+                    end
+                  end
+                end
+              end
+            }
+          end
+        }
+      end
+      # 総トランスグラフの平均
+      # File.open(output_folder+"average_of_average_of_sr.csv", "a") do |io_average_of_average|
+      #   pp "標準化後の平均(一トランスグラフ内)の平均(全てのトランスグラフでの)"
+      #   pp all_trans_sr_standardized.avg
+      #   # io_average_of_average.puts("#{language},"+all_trans_sr_standardized.avg.to_s+",#{pivot_connected_fixed}")
+      #   # io_average_of_average.puts("#{language},"+all_trans_sr_standardized.avg.to_s)
+      # end
+        end
+    }
+
+
+end
+
 
 
 main
