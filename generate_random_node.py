@@ -9,37 +9,70 @@ from datetime import datetime
 import time
 
 
-def generate_transgraph(node_a,node_p,node_b,output_directory):
-    itr_count=0
+def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
+    itr=[]
+    # 実データの枝数に基づく分布
+    # weight =[0.3783812933,0.2521690888,0.1451887865,0.06993896472,0.05019433731,0.02662702045,0.0161860435,0.01261468098,0.008239611842,0.006692367802,0.004658431193,0.003966963137,0.00233053026,0.001341815171,0.001616245302,0.001051670595,0.0009350355104,0.0009523962318,0.0002033898305,0.0002033898305,0.0002033898305,0.0002033898305,0.0005423728814,0.0002711864407,0.00006779661017,0.0002033898305,0.00006779661017,0.0002570694087,0.0001355932203,0.00006779661017,0.00006779661017,0.00006779661017]
+    # 重みを適当に決めてみた
+    weight=[]
+    tmp=1
+    for i in range(1,31):
+        tmp*=2
+        weight.insert(0, tmp)
+    # 重みを適当に決めてみた end
+    weight = np.array(weight)
+    weight = weight/weight.sum()
+    for i in range(1,len(weight)+1):
+        itr.append(i)
+
     n=10
     # output_directory="generate_transgraph/graph/"
+    is_loop_end=0
+    # 注意:枝の数もランダムにした
+    for edge_ap in range(20):#range(np.max([node_a,node_p]), node_a*node_p):
+        edge_ap=0
+        edge_bp=0
+        if is_loop_end==1:
+            break
+        for edge_bp in range(20): #range(np.max([node_b,node_p]), node_b*node_p):
+            if is_loop_end==1:
+                break
+            #a-pのエッジ
+            if np.max([node_a,node_p])== node_a*node_p :
+                edge_ap=np.max([node_a,node_p])
+            else:
+                #次のはランダムで可能な枝数の選択を一様ランダム
+                # edge_ap=np.random.randint(np.max([node_a,node_p]), node_a*node_p +1) #np.max([node_a,node_p])からnode_a*node_p まで
+                while True:
+                    edge_ap = np.random.choice(itr,p=weight)
+                    if edge_ap>=np.max([node_a,node_p]) and edge_ap<=node_a*node_p:
+                        break
 
-    # if node_a == 1 or node_b ==1:
-    #     with open("generate_transgraph/simulation_data.csv", "a") as io_csv:
-    #
-    #         io_csv.write("\""+string_node_p+"\",\""+string_node_a+"\",\""+string_node_b+"\"\n")
-    #
-    # #     print("1")
-    # while True:
-    print("1")
+                #重み付きで枝数決める
+                # weight_edge_ap=weight[np.max([node_a,node_p]):node_a*node_p +1]
+                # weight_edge_ap = weight_edge_ap/weight_edge_ap.sum()
+                # edge_ap = np.random.choice(itr[np.max([node_a,node_p]):node_a*node_p +1],p=weight_edge_ap)
 
-    for edge_ap in range(np.max([node_a,node_p]), node_a*node_p):
-
-        for edge_bp in range(np.max([node_b,node_p]), node_b*node_p):
-            # print("a:"+str(node_a))
-            # print("b:"+str(node_b))
-            # print("p:"+str(node_p))
-            #
-            # print("edge_ap:"+str(edge_ap))
-            # print("edge_bp:"+str(edge_bp))
+            #b-pのエッジ
+            if np.max([node_b,node_p])== node_b*node_p :
+                edge_bp=np.max([node_b,node_p])
+            else:
+                # edge_bp=np.random.randint(np.max([node_b,node_p]), node_b*node_p +1)
+                while True:
+                    edge_bp = np.random.choice(itr,p=weight)
+                    if edge_bp>=np.max([node_b,node_p]) and edge_bp<=node_b*node_p:
+                        break
+                #重み付きで枝数決める
+                # weight_edge_bp=weight[np.max([node_a,node_p]):node_a*node_p +1]
+                # weight_edge_bp = weight_edge_bp/weight_edge_bp.sum()
+                # edge_bp = np.random.choice(itr[np.max([node_a,node_p]):node_a*node_p +1],p=weight_edge_bp)
 
             condition=  edge_ap>= node_a and edge_bp>= node_b and edge_ap>= node_p and edge_bp>= node_p #ノード数とエッジの関係
             condition = condition and (node_a*node_p)>=edge_ap and (node_b*node_p)>=edge_bp #これ以上はる枝がない
+            print("a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b))
+            print("a-p,p-b:"+str(edge_ap)+","+str(edge_bp))
 
             if condition:
-                print("1")
-
-
                 tmp=0
                 while True:
                     G=nx.DiGraph()
@@ -94,8 +127,10 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
 
                     # condition=nx.is_connected(G.to_undirected())
                     if tmp>50:
-                        # print("グラフ作成できず163")
-
+                        print("グラフ作成断念")
+                        is_loop_end=1
+                        with open("generate_transgraph/fail_log.csv", "a") as io_csv2:
+                            io_csv2.write("グラフ作成できず,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b)+",a-p,p-b:"+str(edge_ap)+","+str(edge_bp)+"\n")
                         break
 
                     # 任意のピボットと必ずAとBはつながる
@@ -124,10 +159,6 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
                             for node in subgraph.nodes():
                                 set_A=set()
                                 set_B=set()
-                                # pprint("node")
-                                # pprint(node)
-
-                                print(lang[node])
                                 if lang[node]=='language_P':
                                     # pprint(node)
                                     is_connect_right_a=0
@@ -147,8 +178,8 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
                                     #ピボットごとに必ずAもBもついているか確認
                                     if is_connect_right_a==1 and is_connect_right_b == 1:
                                         # is_not_connect_right=
-                                        print("このピボットはAもBもついている")
-                                        string_node_p=node
+                                        # print("このピボットはAもBもついている")
+                                        string_node_p=node+str(itr_count)
                                     else:
                                         is_not_connect_right=1
 
@@ -159,10 +190,8 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
 
 
                     if nx.is_connected(G.to_undirected()) and is_not_connect_right != 1:# and has_edge_pa ==1 and has_edge_pb == 1:#and G.number_of_nodes()==(node_a+node_b+node_p) and G.number_of_edges()== (edge_ap+edge_bp):
-                        itr_count += 1
                         print("祝作成")
                         # time.sleep(0.5)
-                        itr_count+=1
                         g_visualize = nx.to_agraph(G)
                         output_new_dir=str(node_a)+"-"+str(node_p)+"-"+str(node_b)
                         if not os.path.exists(output_directory+output_new_dir):
@@ -196,12 +225,15 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
                             io_csv.write("\""+string_node_p+"\",\""+string_node_a+"\",\""+string_node_b+"\"\n")
 
 
-
+                        is_loop_end=1
                         break
 
 
             else:
                 print("グラフ作成できず")
+                with open("generate_transgraph/fail_log.csv", "a") as io_csv2:
+                    io_csv2.write("グラフ作成できずL235,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b)+",a-p,p-b:"+str(edge_ap)+","+str(edge_bp))
+
                 continue
 
 
@@ -241,8 +273,8 @@ def weighted_selected():
         node_p = np.random.choice(itr,p=weight_pivot)
         # generate_transgraph(node_a,node_p,node_b,output_directory)
         print("node_a:"+str(node_a)+",node_b:"+str(node_b)+",node_p:"+str(node_p))
-        # generate_transgraph(node_a,node_p,node_b,output_directory)
-        generate_transgraph(1,2,1,output_directory)
+        generate_transgraph(node_a,node_p,node_b,output_directory,itr_count)
+        # generate_transgraph(1,2,1,output_directory)
 
         itr_count+=1
 
