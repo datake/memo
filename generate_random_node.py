@@ -14,8 +14,17 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
     n=10
     # output_directory="generate_transgraph/graph/"
 
+    # if node_a == 1 or node_b ==1:
+    #     with open("generate_transgraph/simulation_data.csv", "a") as io_csv:
+    #
+    #         io_csv.write("\""+string_node_p+"\",\""+string_node_a+"\",\""+string_node_b+"\"\n")
+    #
+    # #     print("1")
     # while True:
+    print("1")
+
     for edge_ap in range(np.max([node_a,node_p]), node_a*node_p):
+
         for edge_bp in range(np.max([node_b,node_p]), node_b*node_p):
             # print("a:"+str(node_a))
             # print("b:"+str(node_b))
@@ -26,7 +35,9 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
 
             condition=  edge_ap>= node_a and edge_bp>= node_b and edge_ap>= node_p and edge_bp>= node_p #ノード数とエッジの関係
             condition = condition and (node_a*node_p)>=edge_ap and (node_b*node_p)>=edge_bp #これ以上はる枝がない
+
             if condition:
+                print("1")
 
 
                 tmp=0
@@ -50,7 +61,7 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
                     # for i in range(1,node_b+1):
                     for i in range(node_b):
                         G.add_node("b-"+str(i),lang='language_B',langB='1',langA='0')
-                        print("b-"+str(i))
+                        # print("b-"+str(i))
 
                     tmp+=1
 
@@ -111,6 +122,8 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
                             langB=nx.get_node_attributes(subgraph,'langB')
 
                             for node in subgraph.nodes():
+                                set_A=set()
+                                set_B=set()
                                 # pprint("node")
                                 # pprint(node)
 
@@ -125,28 +138,30 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
                                             has_edge_pa=1
                                             dict_node_a[node_a_b]=1
                                             is_connect_right_a=1
+                                            set_A.add(node_a_b)
                                         elif lang[node_a_b]=='language_B':
                                             has_edge_pb=1
                                             dict_node_b[node_a_b]=1
                                             is_connect_right_b=1
-
+                                            set_B.add(node_a_b)
                                     #ピボットごとに必ずAもBもついているか確認
                                     if is_connect_right_a==1 and is_connect_right_b == 1:
                                         # is_not_connect_right=
                                         print("このピボットはAもBもついている")
+                                        string_node_p=node
                                     else:
                                         is_not_connect_right=1
 
 
                         else:
                             print("一つのトランスグラフになってない")
-                            time.sleep(0.1)
+                            # time.sleep(0.1)
 
 
                     if nx.is_connected(G.to_undirected()) and is_not_connect_right != 1:# and has_edge_pa ==1 and has_edge_pb == 1:#and G.number_of_nodes()==(node_a+node_b+node_p) and G.number_of_edges()== (edge_ap+edge_bp):
                         itr_count += 1
                         print("祝作成")
-                        time.sleep(0.5)
+                        # time.sleep(0.5)
                         itr_count+=1
                         g_visualize = nx.to_agraph(G)
                         output_new_dir=str(node_a)+"-"+str(node_p)+"-"+str(node_b)
@@ -157,10 +172,31 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
                         output_file=str(len(dict_node_a))+"-"+str(len(dict_node_p))+"-"+str(len(dict_node_b))+"-"+str(len(dict_ap))+"-"+str(len(dict_bp))+"-"+str(itr_count)
 
                         g_visualize.draw(output_directory+output_new_dir+"/"+output_file+'.pdf',prog='dot')
-                        # with open(output_directory+"csv/"+str(node_a)+str(node_p)+str(node_b)+str(edge_ap)+"-"+str(edge_bp)+str(itr_count)+".csv", "w") as file:
-                            # itr_count+=1
-                            # lang=nx.get_node_attributes(G,'lang') # <-この処理遅い
-                            # file.write("test")
+                        string_node_a=""
+                        string_node_b=""
+                        last = len(set_A) - 1
+                        for i, elem in enumerate(set_A):
+                            if i == last:
+                                string_node_a+= elem
+                            else:
+                                string_node_a+= elem
+                                string_node_a+= ","
+
+                        last = len(set_B) - 1
+                        for i, elem in enumerate(set_B):
+                            if i == last:
+                                string_node_b+= elem
+                            else:
+                                string_node_b+= elem
+                                string_node_b+= ","
+                        #csv書き込み
+                        # file_csv = open("generate_transgraph/simulation_data.csv","w")
+                        with open("generate_transgraph/simulation_data.csv", "a") as io_csv:
+
+                            io_csv.write("\""+string_node_p+"\",\""+string_node_a+"\",\""+string_node_b+"\"\n")
+
+
+
                         break
 
 
@@ -173,16 +209,16 @@ def generate_transgraph(node_a,node_p,node_b,output_directory):
 
 def print_all():
     n=7
-    output_directory="generate_transgraph/graph_all/"
+    output_directory="generate_transgraph/0124/"
     for node_a in range(1,n+1):
         for node_b in range(1,n+1):
             for node_p in range(1,4):
                 generate_transgraph(node_a,node_p,node_b,output_directory)
 
 
-def weighted_selected():#TODO:エッジの決め方もランダムにしないといけない
+def weighted_selected():
     itr_count=0
-    output_directory="generate_transgraph/example_10/"
+    output_directory="generate_transgraph/0124/"
     while itr_count<100:
 #
         itr=[]
@@ -205,6 +241,12 @@ def weighted_selected():#TODO:エッジの決め方もランダムにしない�
         node_p = np.random.choice(itr,p=weight_pivot)
         # generate_transgraph(node_a,node_p,node_b,output_directory)
         print("node_a:"+str(node_a)+",node_b:"+str(node_b)+",node_p:"+str(node_p))
+        # generate_transgraph(node_a,node_p,node_b,output_directory)
+        generate_transgraph(1,2,1,output_directory)
+
         itr_count+=1
 
-print_all()
+        with open("generate_transgraph/test.csv", "a") as io_csv2:
+            io_csv2.write("aaaaaa,"+str(itr_count))
+
+weighted_selected()
