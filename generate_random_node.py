@@ -8,7 +8,9 @@ import os
 from datetime import datetime
 import time
 
-
+#エッジを張る際の傾斜 #2,1.2,1.5,1.8
+EDGE_SLOPE=1.5
+EDGE_SLOPE_STRING="1-5"
 def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
     itr=[]
     # 実データの枝数に基づく分布
@@ -17,7 +19,7 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
     weight=[]
     tmp=1
     for i in range(1,31):
-        tmp*=2
+        tmp*=EDGE_SLOPE
         weight.insert(0, tmp)
     # 重みを適当に決めてみた end
     weight = np.array(weight)
@@ -224,7 +226,7 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
 
 
                     if nx.is_connected(G.to_undirected()) and is_not_connect_right != 1:# and has_edge_pa ==1 and has_edge_pb == 1:#and G.number_of_nodes()==(node_a+node_b+node_p) and G.number_of_edges()== (edge_ap+edge_bp):
-                        print("祝作成:"+itr_count)
+                        print("祝作成:"+str(itr_count))
                         # time.sleep(0.5)
                         g_visualize = nx.to_agraph(G)
                         output_new_dir=str(node_a)+"-"+str(node_p)+"-"+str(node_b)
@@ -256,7 +258,7 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
                         #         string_node_b+= ","
                         #csv書き込み
                         # file_csv = open("generate_transgraph/simulation_data.csv","w")
-                        with open("generate_transgraph/simulation_data.csv", "a") as io_csv:
+                        with open("generate_transgraph/simulation_data-"+EDGE_SLOPE_STRING+".csv", "a") as io_csv:
                             for i, elem_p in enumerate(list_node_p_name):
                                 io_csv.write("\""+list_node_p_name[i]+"\",\""+list_node_a_name[i]+"\",\""+list_node_b_name[i]+"\"\n")
 
@@ -267,7 +269,7 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
 
             else:
                 print("グラフ作成できず")
-                with open("generate_transgraph/fail_log.csv", "a") as io_csv2:
+                with open("generate_transgraph/fail_log"+EDGE_SLOPE_STRING+".csv", "a") as io_csv2:
                     io_csv2.write("グラフ作成できずL235,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b)+",a-p,p-b:"+str(edge_ap)+","+str(edge_bp))
 
                 continue
@@ -286,7 +288,7 @@ def print_all():
 
 def weighted_selected():
     itr_count=0
-    output_directory="generate_transgraph/0124/"
+    output_directory="generate_transgraph/0125-edge-"+EDGE_SLOPE_STRING+"/"
     while itr_count<1000:
 #
         itr=[]
@@ -311,7 +313,7 @@ def weighted_selected():
         print("node_a:"+str(node_a)+",node_b:"+str(node_b)+",node_p:"+str(node_p))
         if generate_transgraph(node_a,node_p,node_b,output_directory,itr_count)==1:
             itr_count+=1
-            with open("generate_transgraph/fail_trans_a_p_b.csv", "a") as io_csv2:
+            with open("generate_transgraph/fail/fail_trans_a_p_b-0125-edge-"+EDGE_SLOPE_STRING+".csv", "a") as io_csv2:
                 io_csv2.write("グラフ作成できずL235,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b))
 
 weighted_selected()
