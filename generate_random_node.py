@@ -29,12 +29,12 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
     # output_directory="generate_transgraph/graph/"
     is_loop_end=0
     # 注意:枝の数もランダムにした
-    for edge_ap in range(20):#range(np.max([node_a,node_p]), node_a*node_p):
+    for edge_ap in range(30):#range(np.max([node_a,node_p]), node_a*node_p):
         edge_ap=0
         edge_bp=0
         if is_loop_end==1:
             break
-        for edge_bp in range(20): #range(np.max([node_b,node_p]), node_b*node_p):
+        for edge_bp in range(30): #range(np.max([node_b,node_p]), node_b*node_p):
             if is_loop_end==1:
                 break
             #a-pのエッジ
@@ -131,6 +131,7 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
                         is_loop_end=1
                         with open("generate_transgraph/fail_log.csv", "a") as io_csv2:
                             io_csv2.write("グラフ作成できず,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b)+",a-p,p-b:"+str(edge_ap)+","+str(edge_bp)+"\n")
+                        return -1
                         break
 
                     # 任意のピボットと必ずAとBはつながる
@@ -147,7 +148,12 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
                     dict_node_p={}
                     graphs = nx.connected_component_subgraphs(G.to_undirected())
                     is_not_connect_right=0
+                    # set_A=set()
+                    # set_B=set()
                     #
+                    list_node_a_name=[]
+                    list_node_b_name=[]
+                    list_node_p_name=[]
                     for subgraph in graphs:
                         count_connected_component+=1
                         if count_connected_component==1:
@@ -157,9 +163,14 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
                             langB=nx.get_node_attributes(subgraph,'langB')
 
                             for node in subgraph.nodes():
-                                set_A=set()
-                                set_B=set()
+
                                 if lang[node]=='language_P':
+                                    set_A=set()
+                                    set_B=set()
+                                    string_node_a=""
+                                    string_node_b=""
+                                    string_node_p=""
+
                                     # pprint(node)
                                     is_connect_right_a=0
                                     is_connect_right_b=0
@@ -169,6 +180,8 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
                                             has_edge_pa=1
                                             dict_node_a[node_a_b]=1
                                             is_connect_right_a=1
+                                            # print("L173:")
+                                            # print(node_a_b)
                                             set_A.add(node_a_b)
                                         elif lang[node_a_b]=='language_B':
                                             has_edge_pb=1
@@ -179,18 +192,39 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
                                     if is_connect_right_a==1 and is_connect_right_b == 1:
                                         # is_not_connect_right=
                                         # print("このピボットはAもBもついている")
-                                        string_node_p=node+str(itr_count)
+                                        string_node_p=str(itr_count)+"-"+node
                                     else:
                                         is_not_connect_right=1
 
+                                    last = len(set_A) - 1
+                                    print("set_A:")
+                                    pprint(set_A)
+                                    for i, elem in enumerate(set_A):
+                                        if i == last:
+                                            string_node_a+= str(itr_count)+"-"+elem
+                                        else:
+                                            string_node_a+= str(itr_count)+"-"+elem
+                                            string_node_a+= ","
 
-                        else:
-                            print("一つのトランスグラフになってない")
-                            # time.sleep(0.1)
+                                    last = len(set_B) - 1
+                                    for i, elem in enumerate(set_B):
+                                        if i == last:
+                                            string_node_b+= str(itr_count)+"-"+elem
+                                        else:
+                                            string_node_b+= str(itr_count)+"-"+elem
+                                            string_node_b+= ","
+
+                                    list_node_a_name.append(string_node_a)
+                                    list_node_b_name.append(string_node_b)
+                                    list_node_p_name.append(string_node_p)
+
+                        # else:
+                        #     print("一つのトランスグラフになってない")
+                        #     # time.sleep(0.1)
 
 
                     if nx.is_connected(G.to_undirected()) and is_not_connect_right != 1:# and has_edge_pa ==1 and has_edge_pb == 1:#and G.number_of_nodes()==(node_a+node_b+node_p) and G.number_of_edges()== (edge_ap+edge_bp):
-                        print("祝作成")
+                        print("祝作成:"+itr_count)
                         # time.sleep(0.5)
                         g_visualize = nx.to_agraph(G)
                         output_new_dir=str(node_a)+"-"+str(node_p)+"-"+str(node_b)
@@ -201,31 +235,33 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
                         output_file=str(len(dict_node_a))+"-"+str(len(dict_node_p))+"-"+str(len(dict_node_b))+"-"+str(len(dict_ap))+"-"+str(len(dict_bp))+"-"+str(itr_count)
 
                         g_visualize.draw(output_directory+output_new_dir+"/"+output_file+'.pdf',prog='dot')
-                        string_node_a=""
-                        string_node_b=""
-                        last = len(set_A) - 1
-                        for i, elem in enumerate(set_A):
-                            if i == last:
-                                string_node_a+= elem
-                            else:
-                                string_node_a+= elem
-                                string_node_a+= ","
-
-                        last = len(set_B) - 1
-                        for i, elem in enumerate(set_B):
-                            if i == last:
-                                string_node_b+= elem
-                            else:
-                                string_node_b+= elem
-                                string_node_b+= ","
+                        # string_node_a=""
+                        # string_node_b=""
+                        # last = len(set_A) - 1
+                        # print("set_A:")
+                        # pprint(set_A)
+                        # for i, elem in enumerate(set_A):
+                        #     if i == last:
+                        #         string_node_a+= str(itr_count)+"-"+elem
+                        #     else:
+                        #         string_node_a+= str(itr_count)+"-"+elem
+                        #         string_node_a+= ","
+                        #
+                        # last = len(set_B) - 1
+                        # for i, elem in enumerate(set_B):
+                        #     if i == last:
+                        #         string_node_b+= str(itr_count)+"-"+elem
+                        #     else:
+                        #         string_node_b+= str(itr_count)+"-"+elem
+                        #         string_node_b+= ","
                         #csv書き込み
                         # file_csv = open("generate_transgraph/simulation_data.csv","w")
                         with open("generate_transgraph/simulation_data.csv", "a") as io_csv:
-
-                            io_csv.write("\""+string_node_p+"\",\""+string_node_a+"\",\""+string_node_b+"\"\n")
-
+                            for i, elem_p in enumerate(list_node_p_name):
+                                io_csv.write("\""+list_node_p_name[i]+"\",\""+list_node_a_name[i]+"\",\""+list_node_b_name[i]+"\"\n")
 
                         is_loop_end=1
+                        return 1
                         break
 
 
@@ -251,7 +287,7 @@ def print_all():
 def weighted_selected():
     itr_count=0
     output_directory="generate_transgraph/0124/"
-    while itr_count<100:
+    while itr_count<1000:
 #
         itr=[]
         weight = [0.2531605027,0.320774498,0.1713213992,0.08402242406,0.04440092051,0.02575478045,0.0149637045,0.01003017924,0.006021465853,0.004034759747,0.002254648857,0.00171581481,0.001427267648,0.00125859926,0.0006137083256,0.000406779661,0.0002711864407,0.0003389830508,0.00006779661017,0.0002033898305,0.0002711864407,0.00006779661017,0.0004103184951,0,0,0,0.00006779661017,0.00006779661017,0,0]
@@ -273,12 +309,9 @@ def weighted_selected():
         node_p = np.random.choice(itr,p=weight_pivot)
         # generate_transgraph(node_a,node_p,node_b,output_directory)
         print("node_a:"+str(node_a)+",node_b:"+str(node_b)+",node_p:"+str(node_p))
-        generate_transgraph(node_a,node_p,node_b,output_directory,itr_count)
-        # generate_transgraph(1,2,1,output_directory)
-
-        itr_count+=1
-
-        with open("generate_transgraph/test.csv", "a") as io_csv2:
-            io_csv2.write("aaaaaa,"+str(itr_count))
+        if generate_transgraph(node_a,node_p,node_b,output_directory,itr_count)==1:
+            itr_count+=1
+            with open("generate_transgraph/fail_trans_a_p_b.csv", "a") as io_csv2:
+                io_csv2.write("グラフ作成できずL235,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b))
 
 weighted_selected()
