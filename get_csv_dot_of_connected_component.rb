@@ -10,12 +10,16 @@ require 'rgl/dot'
 # LANG_A="Uy_"
 # LANG_B="Kz_"
 # LANG_P="Zh_"
-LANG_A="Mnk_"
-LANG_B="Zsm_"
-LANG_P="Ind_"
+# LANG_A="Mnk_"
+# LANG_B="Zsm_"
+# LANG_P="Ind_"
+LANG_A="A_"
+LANG_B="B_"
+LANG_P="C_"
+
 def main
-  # make_dot_img_from_each_trans
   get_csv_dot_of_connected_component
+  # get_csv_dot_of_connected_component
   # get_pass_pivot
 end
 
@@ -106,7 +110,10 @@ end
 #すでに繋がっているトランスグラフごとに分離されているファイルから
 #dotや画像を出力
 def make_dot_img_from_each_trans
-  languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn","Zh_Uy_Kz","Ind_Mnk_Zsm"]
+  # languages = ["JaToEn_JaToDe","JaToEn_EnToDe","JaToDe_DeToEn","Zh_Uy_Kz","Ind_Mnk_Zsm2"]
+  # languages = ["JaToEn_EnToDe0105"]
+  languages = ["EngToDeu_EngToNld"]
+
   is_visualize_has_answer_only=1 #答えがあるグラフのみ表示
   languages.each{|language|
 
@@ -118,6 +125,14 @@ def make_dot_img_from_each_trans
       input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
       # Ind_Mnk_Zsmだけ大規模トランスグラフがないから0番目も表示する
       max=155
+      lang_A="Mnk_"
+      lang_B="Zsm_"
+      lang_P="Ind_"
+    elsif language=="Ind_Mnk_Zsm2" #品詞なしの場合
+      input_filename="partition_graph_1227/Ind_Mnk_Zsm_hinsinashi0104/Ind_Mnk_Zsm_subgraph_"
+      answer_filename="answer/Mnk_Zsm.csv"
+      one_to_one_filename="Ind_Mnk_Zsm"
+      max=252
       lang_A="Mnk_"
       lang_B="Zsm_"
       lang_P="Ind_"
@@ -134,11 +149,19 @@ def make_dot_img_from_each_trans
       max=453
       input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
       answer_filename="answer/Ja_De.csv"
-      answer_filename2="answer/De_Ja.csv"
 
       lang_A="Ja_"
       lang_B="De_"
       lang_P="En_"
+    elsif language=="JaToEn_EnToDe0105"
+      max=208
+      input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+      answer_filename="answer/Ja_De.csv"
+
+      lang_A="Ja_"
+      lang_B="De_"
+      lang_P="En_"
+
     elsif language=="Zh_Uy_Kz"
       max=1457
       input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
@@ -155,7 +178,15 @@ def make_dot_img_from_each_trans
       lang_A="Ja_"
       lang_B="En_"
       lang_P="De_"
+    elsif language =="EngToDeu_EngToNld"
+      max=241
+      input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
+      answer_filename="answer/deu_nld_answer.csv"
+      lang_A="Deu_"
+      lang_B="Nld_"
+      lang_P="Eng_"
     end
+
     answer = Answer.new(answer_filename)
     if languages == "JaToEn_JaToDe" || languages == "JaToEn_EnToDe" || languages == "JaToDe_DeToEn"
       answer2 = Answer.new(answer_filename2)
@@ -339,7 +370,7 @@ end
 
 def get_csv_dot_of_connected_component
   # which_lang="JaToEn_EnToDe"
-  which_lang="Ind_Mnk_Zsm_new"
+  which_lang="simulation"
   # which_lang="Zh_Uy_Kz"
   input_filename="share_ratio/#{which_lang}.csv"
   # input_filename="simulation/csv/2-4-4.csv"
@@ -347,6 +378,12 @@ def get_csv_dot_of_connected_component
   # output_each_trans_filename="connected_components1208/test/#{which_lang}"
   output_filename="partition_graph_1227/Ind_Mnk_Zsm_hinsinashi/"
   output_each_trans_filename="partition_graph_1227/Ind_Mnk_Zsm_hinsinashi/Ind_Mnk_Zsm_subgraph"
+  if which_lang=="simulation"
+    input_filename="generate_transgraph/#{which_lang}_data.csv"
+    output_each_trans_folder="generate_transgraph/each_trans/etc/"
+    output_each_trans_filename="generate_transgraph/each_trans/simulation_subgraph"
+    pp "simulationだよ"
+  end
 
   transgraph = Transgraph.new(input_filename)
 
@@ -408,8 +445,8 @@ def get_csv_dot_of_connected_component
   output_transgraph=[]
   passed_transgraphs.each{|passed_transgraph|
     pp passed_transgraph
-    File.open("#{output_each_trans_filename}_#{i_filecount}.dot", "w") do |io|
-      File.open("#{output_each_trans_filename}_#{i_filecount}.csv", "w") do |io2|
+    File.open("#{output_each_trans_folder}#{i_filecount}.dot", "w") do |io|
+      File.open("#{output_each_trans_folder}#{i_filecount}.csv", "w") do |io2|
         io.puts "digraph #{i} {"
         io.puts "graph [rankdir = LR];"
         passed_transgraph.each{|node|
@@ -449,7 +486,8 @@ def get_csv_dot_of_connected_component
         io.puts "}"
       end
     end
-    system( "dot -Tjpg '#{output_each_trans_filename}_#{i_filecount}.dot' -o #{output_each_trans_filename}_#{i_filecount}.jpg" )
+    system( "dot -Tjpg '#{output_each_trans_folder}#{i_filecount}.dot' -o #{output_each_trans_filename}_#{i_filecount}.jpg" )
+    
     i_filecount=i_filecount+1
   }
 end
