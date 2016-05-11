@@ -2,11 +2,15 @@ require 'csv'
 require 'pp'
 require 'logger'
 require 'set'
+require 'rgl/adjacency'
+require 'rgl/dot'
 
 def main
-   measure_share_ratio
-  # measure_common_words
-  #measure_common_headword
+
+  puts "share_ratio以下のP,A,Bの3言語のcsvファイル(ex.JaToEn_EnToDe,Ind_Mnk_Zsm_new)"
+  input_filename="share_ratio/JaToEn_EnToDe.csv"
+  transgraph = Transgraph.new(input_filename)
+
 end
 
 class Transgraph
@@ -18,7 +22,10 @@ class Transgraph
     @lang_b_p = {}
     @lang_p_a = {}
     @lang_p_b = {}
-
+    @lang_p_transnum = {}
+    @lang_transnum_p = {} #{"transgraph_number"=>Set[pivot1,pivot2,..]}
+    transnum=0
+    tmp_transmum=0
     CSV.foreach(input_filename) do |row|
       #ZUKのデータはカンマ区切りではなく空白区切りで入ってる
       # row[1] = row[1].gsub(/\s/, ',')
@@ -38,7 +45,7 @@ class Transgraph
           #aやbからみたとき、複数のpivotが対応することがある
           if @lang_a_p.has_key?(a)
             @lang_a_p[a] << row[0] #{"a1"=>Set[pivot1,pivot2,..]}
-            # pp @lang_a_p[a]
+
           else
             @lang_a_p[a]=Set[row[0]] #{"a1"=>Set[pivot]}
           end
@@ -53,8 +60,34 @@ class Transgraph
           end
         }
       }
+      # @lang_transnum_p = {} #{"transgraph_number"=>Set[pivot1,pivot2,..]}
+      @lang_a_p.each{|a, set_of_pivot_a|
+        pp a
+        set_of_pivot_a.each{|pivot_a|
+            pp pivot_a
+          if @lang_transnum_p.has_key?(pivot_a)
+            tmp_transmum=@lang_p_transnum[pivot_a]
+          else
+            @lang_p_transnum[pivot_a]=transnum
+          end
+
+        }
+        transnum+=1
+
+      }
+      @lang_b_p.each{|b, set_of_pivot_b|
+        pp b
+        set_of_pivot_b.each{|pivot_b|
+          pp pivot_b
+          @lang_p_transnum[pivot_b]=transnum
+        }
+        transnum+=1
+      }
+
+      pp transnum
     end
   end
+
   attr_accessor :pivot
   attr_accessor :lang_a_b
   attr_accessor :lang_b_a
@@ -86,8 +119,8 @@ def split_comma_to_array (text)
 end
 
 #3言語辞書データと答えの辞書データを入力
-#次数を解析する
-def measure_common_words
+#pivotの共有率を返す
+def measure_share_ratio_version1
   puts "share_ratio以下のP,A,Bの3言語のcsvファイル(ex.JaToEn_EnToDe,Ind_Mnk_Zsm_new)"
   input_filename="share_ratio/#{$stdin.gets.chomp}.csv"
   # input_filename="share_ratio/JaToEn_EnToDe.csv"
@@ -98,7 +131,7 @@ def measure_common_words
   # answer_filename="answer/Ja_De.csv"
   # answer_filename="answer/Mnk_Zsm.csv"
   # answer_filename="answer/U_K.csv"
-  #TODO:もうひとつ答えもいる?日->独と独->日は別)
+
 
   transgraph = Transgraph.new(input_filename) #{"pivot"=>["a", "b"]}
   #pp transgraph.lang_a_p

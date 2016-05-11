@@ -5,7 +5,7 @@ require 'set'
 require 'unf'
 
 def main
-  measure_weighted_average_edge
+  measure_feature_value_weighted_average_selection_probability
 
 end
 class Array
@@ -159,7 +159,7 @@ end
 
 
 def measure_feature_value
-  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm2","Zh_Uy_Kz"]
+  # languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm2","Zh_Uy_Kz"]
   # languages = ["JaToEn_EnToDe0105"]
   # languages = ["Ind_Mnk_Zsm2","Zh_Uy_Kz"]
 
@@ -608,9 +608,12 @@ def measure_feature_value_precision
 end
 
 
-def measure_feature_value_weighted_verage_selection_probability
-  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm2","Zh_Uy_Kz"]
+def measure_feature_value_weighted_average_selection_probability
+  # languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm2","Zh_Uy_Kz"]
+  languages = ["Zh_Uy_Kz"]
+
   File.open("weighted_average/features_value.csv", "w") do |io_all_lang|
+    File.open("weighted_average/average_of_correct_pair_sr.csv", "w") do |io_average_correct_pair|
     languages.each{|language|
 
       is_population_connected_only=1 #母集団の取り方
@@ -650,17 +653,24 @@ def measure_feature_value_weighted_verage_selection_probability
         # answer_filename="answer/Uy_Kz.csv"
         answer_filename="answer/Marhaba_and_1distance.csv"
         one_to_one_filename="Zh_Uy_Kz"
+      elsif language =="EngToDeu_EngToNld"
+        max=241
+        input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
+        answer_filename="answer/deu_nld_answer.csv"
+        one_to_one_filename="EngToDeu_EngToNld"
       end
       answer = Answer.new(answer_filename)
       one_to_one = Result.new("1-1/csv/"+one_to_one_filename+".csv")
 
       all_trans_sr_standardized=Array.new
       File.open(output_folder+"features_#{language}.csv", "w") do |io|
+        File.open(output_folder+"0129_features_#{language}.csv", "w") do |io_0129|
         #重要
         pair_reachable=Array.new
         pair_standardized_share_ratio=Array.new
         all_sr_divide_reachable=Array.new
         all_reachable_target=Array.new
+        all_correct_pair_sr=Array.new
         min.upto(max) do |transgraph_itr|
           transgraph = Transgraph.new(input_filename+"#{transgraph_itr}.csv")
           pivot_connected=Set.new
@@ -724,6 +734,7 @@ def measure_feature_value_weighted_verage_selection_probability
                       sr_of_this_pair=pivot_share_num_answer[-1].fdiv(pivot_connected_num_answer[-1])
 
                       share_ratio_answer.push(sr_of_this_pair) #pivotの共有率
+                      # io_0129.puts ",#{answer_key},#{answer_value}"
                       #reachable計測
                       reachable_node_num=0
                       is_already_reachable={}
@@ -749,6 +760,8 @@ def measure_feature_value_weighted_verage_selection_probability
             if share_ratio.standard_deviation !=0
               share_ratio_answer.each{|sr_answer|
                 each_trans_sr_standardized.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
+                all_correct_pair_sr.push((sr_answer-share_ratio.avg)/share_ratio.standard_deviation)
+                io_0129.puts "#{transgraph_itr},#{(sr_answer-share_ratio.avg)/share_ratio.standard_deviation}"
               }
             else
               # 標準偏差が0ということはすべてのshare_ratioの値が同じとき
@@ -762,7 +775,7 @@ def measure_feature_value_weighted_verage_selection_probability
             print_line= transgraph_itr.to_s+","+reachable_node_num_arr.avg.to_s+","+each_trans_sr_standardized.avg.to_s+","+kvstring
             pp print_line
             # File.open(output_folder+"precision/features_#{language}.csv", "a") do |io| #ファイルあるなら末尾追記
-            io.puts print_line
+            # io.puts print_line
             # end
 
           end
@@ -774,10 +787,15 @@ def measure_feature_value_weighted_verage_selection_probability
           numerator += 1/reachable_target
         }
         pp numerator.to_f/all_reachable_target.size.to_f
-        io_all_lang.puts "#{language},#{denominator/numerator},#{denominator},#{numerator},#{numerator.to_f/all_reachable_target.size.to_f}"
+        # io_all_lang.puts "#{language},#{denominator/numerator},#{denominator},#{numerator},#{numerator.to_f/all_reachable_target.size.to_f}"
+        io_average_correct_pair.puts "#{language},aaa"
+        io_average_correct_pair.puts "#{language},#{all_correct_pair_sr.avg}"
       end
+    end
     }
   end
+  end
+
 end
 
 def measure_weighted_average_edge

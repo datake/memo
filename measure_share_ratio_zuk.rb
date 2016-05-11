@@ -5,7 +5,8 @@ require 'set'
 require 'unf'
 
 def main
-  measure_standardized_share_ratio
+  # measure_standardized_share_ratio
+  get_zuk_answer_from_each_trans
   # measure_share_ratio_zuk
   # measure_share_ratio_jaen_jade
   # get_zuk_answer_from_each_trans
@@ -138,15 +139,17 @@ def get_zuk_answer_from_each_trans
   language="Zh_Uy_Kz"
   # input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
   # input_filename="connected_components/each_trans_#{language}/#{language}_subgraph_"
-  answer_filename0="answer/zuk1217/answer_UK_distance0_ruby_each_trans.csv"
-  answer_filename1="answer/zuk1217/answer_UK_distance1_ruby_each_trans.csv"
-  answer_filename2="answer/zuk1217/answer_UK_distance2_ruby_each_trans.csv"
-  max=1680
+  input_filename="partition_graph_1227/"+language+"/"+language+"_subgraph_"
+
+  answer_filename0="answer/zuk1230/answer_UK_distance0_ruby_each_trans.csv"
+  answer_filename1="answer/zuk1230/answer_UK_distance1_ruby_each_trans.csv"
+  answer_filename2="answer/zuk1230/answer_UK_distance2_ruby_each_trans.csv"
+  max=1475
   tmp_count=0
   answer_UK_0={}
   answer_UK_1={}
   answer_UK_2={}
-  0.upto(max) do |i|
+  1.upto(max) do |i|
     transgraph = Transgraph.new(input_filename+"#{i}.csv")
 
     pivot_connected=Set.new
@@ -171,18 +174,19 @@ def get_zuk_answer_from_each_trans
         pivot_share_num.push(pivot_share.size)
         share_ratio.push(pivot_share_num[-1].fdiv(pivot_connected_num[-1])) #pivotの共有率
         # 編集距離をここで計算
-        node_a=UNF::Normalizer.normalize(node_a, :nfkc)
-        node_b=UNF::Normalizer.normalize(node_b, :nfkc)
+        norm_node_a=UNF::Normalizer.normalize(node_a, :nfkc)
+        norm_node_b=UNF::Normalizer.normalize(node_b, :nfkc)
         # if levenshtein_distance(node_a,node_b)<2
-        lev_distanve=levenshtein_distance(node_a,node_b)
+        lev_distanve=levenshtein_distance(norm_node_a,norm_node_b)
         if lev_distanve==0
           answer_UK_0[node_a]=node_b
           pp "distance:0"
-        elsif lev_distanve==1 && node_a[0]==node_b[0]
+        elsif lev_distanve==1 #&& node_a[0]==node_b[0]
           answer_UK_1[node_a]=node_b
           pp "distance:1"
-        elsif lev_distanve==2 && node_a[0]==node_b[0]
+        elsif lev_distanve==2 #&& node_a[0]==node_b[0]
           answer_UK_2[node_a]=node_b
+          pp "distance:2"
         end
       }
     }

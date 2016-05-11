@@ -487,7 +487,7 @@ def get_csv_dot_of_connected_component
       end
     end
     system( "dot -Tjpg '#{output_each_trans_folder}#{i_filecount}.dot' -o #{output_each_trans_filename}_#{i_filecount}.jpg" )
-    
+
     i_filecount=i_filecount+1
   }
 end

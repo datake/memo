@@ -3,8 +3,10 @@ require 'pp'
 require 'logger'
 
 def main
-  # get_precision_from_2dict
-  convert_from_mardan_1to1
+  # get_precision_from_1dict
+  # convert_from_mardan_1to1
+  get_precision_from_1dict
+  # convert_from_mardan_1to1
   # get_precision_from_zukind
 end
 
@@ -128,8 +130,11 @@ end
 #答えの辞書データのkeyがuniqueではない
 def get_precision_from_1dict
 
-  language="JaToEn_EnToDe0105"
+  # language="Zh_Uy_Kz"
+  File.open("precision/all_precision.csv", "w") do |io_all|
 
+  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm","Zh_Uy_Kz"]
+  languages.each{|language|
   if language=="Zh_Uy_Kz"
     oofile_num=1480
     # input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
@@ -162,10 +167,13 @@ def get_precision_from_1dict
     input_folder="1-1/buffer2_JaDe_DeEn_380/graph_"
     answer_filename="answer/Ja_En.csv"
     # answer_filename2="answer/En_Ja.csv"
-
+  elsif language =="EngToDeu_EngToNld"
+    oofile_num=241
+    input_filename="partition_graph_1227/#{language}/#{language}_subgraph_"
+    answer_filename="answer/deu_nld_answer.csv"
   end
 
-  output_filename="precision/2130"+language+"_from1dict__precision.csv"
+  output_filename="precision/"+language+"_from1dict__precision.csv"
 
   answer = Answer.new(answer_filename)
   # pp answer
@@ -224,55 +232,49 @@ def get_precision_from_1dict
     end
     #precision表示
     pp precisions.inject(0.0){|r,i| r+=i }/precisions.size #precision平均
-    io.puts precisions.inject(0.0){|r,i| r+=i }/precisions.size #precision平均
+    precision_this_lang=precisions.inject(0.0){|r,i| r+=i }/precisions.size
+    io.puts precision_this_lang
+    io_all.puts "#{language},#{precision_this_lang}"
   end
+}
+end
 end
 
 #実際のアプリケーションで得られた1-1のtsvファイルをcsvファイルに変換
 def convert_from_mardan_1to1
-  languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm","Zh_Uy_Kz"]
+  # languages = ["JaToEn_EnToDe","JaToDe_DeToEn","JaToEn_JaToDe","Ind_Mnk_Zsm","Zh_Uy_Kz"]
   # language="JaToEn_EnToDe0105"
+  language="simulation"
   languages.each{|language|
-
+    output_filename="1-1/csv/"+language+".csv"
     if language=="Zh_Uy_Kz"
       oofile_num=1480
       # input_filename="partition_graph1210/"+language+"/"+language+"_subgraph_"
       input_folder="1-1/buffer2_zuk_1480/graph_"
-      answer_filename="precision/answerZh_Uy_Kz.csv"
-
     elsif language=="Ind_Mnk_Zsm"
       # oofile_num=192 品詞ありのトランスグラフだと192に分割
       oofile_num=253 #品詞なし
       input_folder="1-1/buffer2_Ind_Mnk_Zsm_253/graph_"
-      # answer_filename="answer/Mnk_Zsm.csv"
-      answer_filename="precision/answerInd_Mnk_Zsm.csv"
     elsif language=="JaToEn_EnToDe"
       oofile_num=456
       input_folder="1-1/buffer2_JaEn_EnDe_456/graph_"
-      answer_filename="answer/Ja_De.csv"
-      # answer_filename2="answer/De_Ja.csv"
     elsif language=="JaToEn_EnToDe0105"
       oofile_num=207
       input_folder="1-1/buffer2_JaToEn_EnToDe0105_207/graph_"
-      answer_filename="answer/Ja_De.csv"
     elsif language=="JaToEn_JaToDe"
       oofile_num=404
       input_folder="1-1/buffer2_JaEn_JaDe_404/graph_"
-      answer_filename="answer/En_De.csv"
-      # answer_filename2="answer/De_En.csv"
     elsif language=="JaToDe_DeToEn"
       oofile_num=380
       input_folder="1-1/buffer2_JaDe_DeEn_380/graph_"
-      answer_filename="answer/Ja_En.csv"
-      # answer_filename2="answer/En_Ja.csv"
-
+    elsif language=="simulation"
+      oofile_num=1000
+      input_folder="1-1-simulation/simulation/graph_"
+      output_filename="1-1-simulation/csv/"+language+".csv"
     end
 
-    output_filename="1-1/csv/"+language+".csv"
 
-    answer = Answer.new(answer_filename)
-    # pp answer
-    unregistered_num=0;
+
     precisions=Array.new#precisionは作成した辞書のうち正しい割合
     #出力結果の検証
     File.open(output_filename, "w") do |io|

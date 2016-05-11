@@ -8,9 +8,9 @@ import os
 from datetime import datetime
 import time
 
-#エッジを張る際の傾斜 #2,1.2,1.5,1.8
-EDGE_SLOPE=1.5
-EDGE_SLOPE_STRING="1-5"
+#エッジを張る際の傾斜 #2,1.2,1.5,1.8,2.0,1.0
+EDGE_SLOPE=2.5
+EDGE_SLOPE_STRING="2-5"
 def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
     itr=[]
     # 実データの枝数に基づく分布
@@ -270,7 +270,7 @@ def generate_transgraph(node_a,node_p,node_b,output_directory,itr_count):
             else:
                 print("グラフ作成できず")
                 with open("generate_transgraph/fail_log"+EDGE_SLOPE_STRING+".csv", "a") as io_csv2:
-                    io_csv2.write("グラフ作成できずL235,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b)+",a-p,p-b:"+str(edge_ap)+","+str(edge_bp))
+                    io_csv2.write("グラフ作成できずL235,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b)+",a-p,p-b:"+str(edge_ap)+","+str(edge_bp)+"\n")
 
                 continue
 
@@ -314,6 +314,6 @@ def weighted_selected():
         if generate_transgraph(node_a,node_p,node_b,output_directory,itr_count)==1:
             itr_count+=1
             with open("generate_transgraph/fail/fail_trans_a_p_b-0125-edge-"+EDGE_SLOPE_STRING+".csv", "a") as io_csv2:
-                io_csv2.write("グラフ作成できずL235,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b))
+                io_csv2.write("グラフ作成できずL235,"+str(itr_count)+"a,p,b:"+str(node_a)+","+str(node_p)+","+str(node_b)+"\n")
 
 weighted_selected()

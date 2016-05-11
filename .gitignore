@@ -40,3 +40,11 @@ weighted_average_エッジ数で加重平均/
 answer/
 generate_transgraph/
 generated_trans_from_real/
+newfeature/
+partition_graph_1227/
+precision_0202/
+reachable/
+standardized_share_ratio/
+*.csv
+weighted_average_ペアごとに計測したもの/
+weighted_average全てのペアで計測したもの
